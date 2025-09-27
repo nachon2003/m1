@@ -71,7 +71,28 @@ const { twelveDataRateLimiter } = require('./rateLimiter');
 const ohlcCache = new NodeCache({ stdTTL: 60 * 60, checkperiod: 120 }); // 1 hour TTL
 const newsCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 120 }); // 5 minute TTL
 
-app.use(cors());
+// --- (แก้ไข) ตั้งค่า CORS ให้ปลอดภัยสำหรับ Production ---
+// กำหนด URL ของ Frontend ที่จะอนุญาตให้เรียก API ได้
+const allowedOrigins = [
+    'https://m1-two-topaz.vercel.app', // URL ของ Frontend บน Vercel ที่คุณให้มา
+    'http://localhost:3000'           // URL สำหรับการพัฒนาบนเครื่อง (dev server)
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // อนุญาตถ้า origin อยู่ใน allowedOrigins
+    // หรือถ้า request ไม่มี origin (เช่น การเรียกผ่าน Postman หรือ server-to-server)
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // อนุญาตให้ส่งข้อมูล credentials (เช่น Authorization header)
+};
+
+app.use(cors(corsOptions)); // ใช้ cors middleware พร้อมกับ options ที่กำหนด
+
 app.use(express.json());
 
 // Serve static files from the backend's public directory (for uploads)
