@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import eventBus from '../eventBus';
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Analytics } from "@vercel/analytics/react";
 
 const AuthContext = createContext(null);
 
@@ -167,7 +166,6 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={value}>
             {children}
             <SpeedInsights />
-            <Analytics />
         </AuthContext.Provider>
     );
 };

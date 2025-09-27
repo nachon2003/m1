@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import './ProfileModal.css';
 
 const ProfileModal = ({ isOpen, onClose }) => {
-    const { user, token, changePassword, updateUserProfile, updateEmail } = useAuth(); // (ใหม่) ดึงฟังก์ชัน updateEmail
+    const { user, changePassword, updateEmail } = useAuth(); // (ใหม่) ดึงฟังก์ชัน updateEmail
     
     // (ใหม่) ใช้ state แยกสำหรับ email เพื่อให้แก้ไขได้
     const [email, setEmail] = useState(user?.email || '');
