@@ -1,0 +1,127 @@
+.backtest-results-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    padding: 20px;
+    background-color: var(--background-color-secondary);
+    border-radius: 8px;
+    border-top: 1px solid var(--border-color-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.backtest-title {
+    font-size: 1.2em;
+    color: var(--text-color-primary);
+    margin-bottom: 5px;
+}
+
+.backtest-subtitle {
+    font-size: 0.9em;
+    color: var(--text-color-secondary);
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 400px; /* Add scroll for long tables */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+th {
+    padding: 10px 12px;
+    text-align: center; /* (แก้ไข) จัดกลาง */
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+td {
+    padding: 10px 12px;
+    text-align: center; /* (แก้ไข) จัดกลาง */
+    border-bottom: 1px solid var(--border-color-light);
+    transition: background-color 0.2s ease-in-out;
+}
+
+
+thead th {
+    background-color: var(--background-color-secondary);
+    color: var(--text-color-secondary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+/* (ใหม่) ทำให้คอลัมน์แรก (Symbol) ติดขอบซ้ายเมื่อเลื่อน */
+thead th:first-child, tbody td:first-child, tfoot td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: var(--background-color-zebra); /* (แก้ไข) ใช้สีพื้นหลังของแถว */
+    z-index: 2; /* (ใหม่) ทำให้ Symbol อยู่เหนือกว่า */
+}
+
+/* (ใหม่) สไตล์สำหรับคอลัมน์ค่าเฉลี่ย */
+.avg-col {
+    font-weight: 600;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-right: 2px solid var(--border-color-strong);
+}
+
+tbody tr:hover td {
+    background-color: var(--background-color-hover);
+}
+
+/* (ใหม่) สไตล์สำหรับแถวสรุปค่าเฉลี่ย */
+tfoot .average-row {
+    background-color: var(--background-color-zebra);
+    border-top: 2px solid var(--border-color-strong);
+}
+
+tfoot .average-row td {
+    font-weight: 700;
+    color: var(--text-color-primary);
+}
+
+/* (ใหม่) เพิ่ม Zebra Striping */
+tbody tr:nth-child(even) {
+    background-color: var(--background-color-zebra);
+}
+
+/* (แก้ไข) เปลี่ยนมาใช้สีพื้นหลังแทนสีตัวอักษร (Heatmap) */
+.rate-high {
+    background-color: rgba(40, 167, 69, 0.5); /* สีเขียวเข้ม */
+    color: #fff;
+    font-weight: 600;
+}
+
+.rate-mid {
+    background-color: rgba(40, 167, 69, 0.2); /* สีเขียวอ่อน */
+}
+
+.rate-neutral {
+    /* ไม่มีสีพื้นหลัง */
+}
+
+.rate-low {
+    background-color: rgba(220, 53, 69, 0.2); /* สีแดงอ่อน */
+}
+
+.rate-very-low {
+    background-color: rgba(220, 53, 69, 0.5); /* สีแดงเข้ม */
+    color: #fff;
+    font-weight: 600;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-color-secondary);
+}
+
+.error-message {
+    text-align: center;
+    padding: 20px;
+    color: var(--color-danger);
+}

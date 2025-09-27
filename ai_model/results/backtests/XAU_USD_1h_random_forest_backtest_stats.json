@@ -1,11 +1,12 @@
 {
     "symbol":"XAU\/USD",
+    "timeframe":"1h",
     "return_pct":0.0,
-    "buy_and_hold_return_pct":10.6262598221,
+    "buy_and_hold_return_pct":9.8390812863,
     "max_drawdown_pct":0.0,
     "win_rate_pct":null,
     "total_trades":0,
     "profit_factor":null,
     "sharpe_ratio":null,
-    "duration_days":49
+    "duration_days":62
 }

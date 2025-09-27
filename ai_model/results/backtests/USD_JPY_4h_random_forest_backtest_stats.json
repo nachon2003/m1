@@ -1,11 +1,12 @@
 {
     "symbol":"USD\/JPY",
+    "timeframe":"4h",
     "return_pct":0.0,
-    "buy_and_hold_return_pct":-5.0019329897,
+    "buy_and_hold_return_pct":-1.813399041,
     "max_drawdown_pct":0.0,
     "win_rate_pct":null,
     "total_trades":0,
     "profit_factor":null,
     "sharpe_ratio":null,
-    "duration_days":227
+    "duration_days":284
 }

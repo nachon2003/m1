@@ -1,0 +1,31 @@
+.trade-history-container {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.history-title {
+    font-size: 1.2em;
+    color: var(--text-color-primary);
+    margin-bottom: 15px;
+}
+
+.trade-history-container .table-wrapper {
+    max-height: 300px; /* จำกัดความสูงของตารางประวัติ */
+}
+
+.status-tp {
+    color: var(--color-success);
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-sl {
+    color: var(--color-danger);
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-pending, .status-open {
+    color: var(--color-warning);
+}

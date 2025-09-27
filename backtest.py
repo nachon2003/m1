@@ -8,24 +8,30 @@ from sklearn.model_selection import train_test_split # type: ignore
 # (ใหม่) Import ฟังก์ชันคำนวณ Volatility และค่า Factor จาก create_labels (อัปเดต Path)
 from create_labels import get_daily_volatility, TP_FACTOR, SL_FACTOR
 
+# (ใหม่) กำหนดรายชื่อ Symbols และ Timeframes ที่ต้องการทดสอบทั้งหมด
+SUPPORTED_SYMBOLS = [
+    'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CAD', 'USD/CHF', 'XAU/USD'
+]
+SUPPORTED_TIMEFRAMES = [
+    '1m', '5m', '15m', '30m', '1h', '4h', '1d'
+]
+
+# (ใหม่) กำหนดค่าเริ่มต้นสำหรับ model_type
+DEFAULT_MODEL_TYPE = 'random_forest'
+
 # --- ส่วนที่ 1: สร้างคลาสกลยุทธ์ (Strategy) ---
 class MLStrategy(Strategy):
     # --- ตั้งค่าตัวแปรสำหรับกลยุทธ์ ---
     symbol = None  # จะถูกกำหนดค่าจากภายนอก
     model = None   # จะถูกโหลดเข้ามาจากภายนอก
     
-    # (ปรับปรุง) อัปเดตรายชื่อ Features ทั้งหมดให้ตรงกับตอนเทรนโมเดล
-    # (ใหม่) เพิ่ม Features ที่เกี่ยวกับ Pivot Points
+    # (ปรับปรุง) อัปเดตรายชื่อ Features ให้ตรงกับตอนเทรนโมเดลใหม่
     feature_cols = [
-        'RSI_14', 'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
-        'BBL_20_2.0',
-        'BBU_20_2.0',
-        'BBB_20_2.0', 
-        'BBP_20_2.0',
-        'ATRr_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3',
-        'dist_to_pp', 'dist_to_r1', 'dist_to_s1',
-        'dist_to_r2', 'dist_to_s2',
-        'trend_status', 'is_trending', 's1', 'r1' # (แก้ไข) จัดลำดับให้ตรงกับตอนเทรน
+        'RSI_14', 
+        'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
+        'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+        'ATRr_14', 
+        'STOCHk_14_3_3', 'STOCHd_14_3_3'
     ]
 
     # (ปรับปรุง) กำหนดขนาดของ Position เป็น 0.01 Lot (Fixed Lot Size)
@@ -50,21 +56,15 @@ class MLStrategy(Strategy):
         # next() จะถูกเรียกในทุกๆ แท่งเทียน
         
         # --- เตรียมข้อมูล Features สำหรับแท่งเทียนปัจจุบัน ---
-        # สร้าง DataFrame ขนาดเล็กสำหรับข้อมูลปัจจุบัน
-        current_features = pd.DataFrame([self.data.df.iloc[-1][self.feature_cols]])
+        # สร้าง DataFrame ขนาดเล็กสำหรับข้อมูลปัจจุบัน (แก้ไขให้รองรับข้อมูลไม่ครบ)
+        try:
+            current_features = pd.DataFrame([self.data.df.iloc[-1][self.feature_cols]])
+        except (IndexError, KeyError):
+            return # ข้ามไปถ้าข้อมูลไม่พร้อม
         
         # --- ทำนายสัญญาณด้วยโมเดล ---
         # model.predict() จะคืนค่าเป็น array เช่น [1] หรือ [-1] หรือ [0]
         signal = self.model.predict(current_features)[0]
-
-        # (ใหม่) ดึงค่า Trend Status ปัจจุบัน
-        current_trend = self.data.df.iloc[-1]['trend_status']
-
-        # (ใหม่) ดึงค่าแนวรับ-แนวต้าน และ ATR ปัจจุบัน
-        s1 = self.data.df.iloc[-1]['s1']
-        r1 = self.data.df.iloc[-1]['r1']
-        atr = self.data.df.iloc[-1]['ATRr_14'] * self.data.Close[-1] / 100 # แปลง ATRr เป็นค่าราคา
-        price = self.data.Close[-1]
 
         # --- (ปรับปรุง) คำนวณระดับราคา TP/SL แบบจุดคงที่ ---
         price = self.data.Close[-1]
@@ -75,21 +75,15 @@ class MLStrategy(Strategy):
         short_tp = price - self.tp_pips * self.pip_size
         short_sl = price + self.sl_pips * self.pip_size
 
-        # --- (ปรับปรุงครั้งใหญ่) ตรรกะการเข้าเทรดโดยอิงแนวรับ-แนวต้าน ---
+        # --- ตรรกะการเข้าเทรดตามสัญญาณจากโมเดล ---
         if self.position: # ถ้ามี position อยู่แล้ว ไม่ต้องทำอะไร
             return
 
         # --- เงื่อนไขการเข้า BUY ---
-        # 1. สัญญาณเป็น BUY
-        # 2. ตลาดไม่เป็นขาลง (เป็นขาขึ้นหรือ Sideways)
-        # 3. ราคาปัจจุบันอยู่ใกล้แนวรับ S1 (ในระยะ 2*ATR)
-        is_near_support = (price - s1) < (2 * atr) if atr > 0 else False
-        if signal == 1 and current_trend >= 0 and is_near_support:
+        if signal == 1:
             self.buy(size=self.position_size, sl=long_sl, tp=long_tp)
-
-        # สัญญาณ BUY
-        is_near_resistance = (r1 - price) < (2 * atr) if atr > 0 else False
-        if signal == -1 and current_trend <= 0 and is_near_resistance:
+        # --- เงื่อนไขการเข้า SELL ---
+        elif signal == -1:
             self.sell(size=self.position_size, sl=short_sl, tp=short_tp)
 
 def main(model_type, symbol, timeframe):
@@ -125,15 +119,23 @@ def main(model_type, symbol, timeframe):
 
     # --- ขั้นตอนที่ 1: โหลดข้อมูลและโมเดล ---
     df = pd.read_csv(data_filepath, index_col='datetime', parse_dates=True)
+    
+    # (แก้ไข) สร้าง Features จาก DataFrame ทั้งหมดก่อนที่จะแบ่งข้อมูล
+    # เพื่อให้แน่ใจว่า Test Set มีข้อมูล Feature ครบถ้วน
+    # ไม่ต้องสร้าง Feature ที่นี่แล้ว เพราะข้อมูลจากไฟล์ labeled.csv มีครบถ้วน
+    df.dropna(inplace=True)
+    
     model = joblib.load(model_filepath)
     
     # --- ขั้นตอนที่ 2: แบ่งข้อมูล Test Set ---
-    _, test_df = train_test_split(df, test_size=0.2, shuffle=False)
+    # แบ่งข้อมูลหลังจากสร้าง Feature เสร็จแล้ว
+    _, test_df = train_test_split(df, test_size=0.25, shuffle=False, random_state=42)
     
     # --- แก้ไขชื่อคอลัมน์ให้ตรงตามที่ backtesting.py ต้องการ ---
-    test_df.rename(columns={
+    # (แก้ไข) ใช้ test_df ที่แบ่งมาแล้ว และไม่ใช้ inplace=True
+    test_df = test_df.rename(columns={
         'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'
-    }, inplace=True)
+    })
     
     # --- ขั้นตอนที่ 3: รัน Backtest ---
     MLStrategy.symbol = symbol
@@ -145,6 +147,7 @@ def main(model_type, symbol, timeframe):
         MLStrategy.pip_size = 0.0001
     MLStrategy.model = model
     
+    # (แก้ไข) ส่งเฉพาะ test_df เข้าไปใน Backtest
     bt = Backtest(test_df, MLStrategy, cash=10000, commission=.002)
     stats = bt.run()
     
@@ -157,6 +160,7 @@ def main(model_type, symbol, timeframe):
 
     stats_to_save = {
         'symbol': symbol,
+        'timeframe': timeframe,
         'return_pct': stats['Return [%]'],
         'buy_and_hold_return_pct': stats['Buy & Hold Return [%]'],
         'max_drawdown_pct': stats['Max. Drawdown [%]'],
@@ -179,11 +183,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Backtest a machine learning trading strategy.")
     parser.add_argument(
         '--model_type', 
-        type=str, 
-        default='random_forest', 
+        type=str,
+        default=DEFAULT_MODEL_TYPE,
         help="Type of model to backtest (e.g., 'random_forest')."
     )
-    parser.add_argument('--symbol', type=str, required=True, help="The trading symbol, e.g., 'EUR/USD'")
-    parser.add_argument('--timeframe', type=str, required=True, help="The timeframe, e.g., '4h'")
+    # (แก้ไข) ทำให้ Argument ไม่บังคับ (optional)
+    parser.add_argument('--symbol', type=str, help="The trading symbol, e.g., 'EUR/USD'")
+    parser.add_argument('--timeframe', type=str, help="The timeframe, e.g., '4h'")
     args = parser.parse_args()
-    main(args.model_type, args.symbol, args.timeframe)
+
+    if args.symbol and args.timeframe:
+        main(args.model_type, args.symbol, args.timeframe)
+    else:
+        print("No specific symbol/timeframe provided. Starting batch backtest for all supported pairs and timeframes...")
+        for symbol in SUPPORTED_SYMBOLS:
+            for timeframe in SUPPORTED_TIMEFRAMES:
+                try:
+                    main(DEFAULT_MODEL_TYPE, symbol, timeframe)
+                except Exception as e:
+                    print(f"An error occurred during backtesting for {symbol} ({timeframe}): {e}")
+        print("\nBatch backtest finished!")

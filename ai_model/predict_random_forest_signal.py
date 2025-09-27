@@ -12,43 +12,11 @@ def calculate_features(df):
     df.ta.bbands(length=20, std=2, append=True)
     df.ta.atr(length=14, append=True)
     df.ta.stoch(k=14, d=3, smooth_k=3, append=True)
-
-    # คำนวณ Pivot Points
-    prev_high = df['high'].shift(1)
-    prev_low = df['low'].shift(1)
-    prev_close = df['close'].shift(1)
-    df['pp'] = (prev_high + prev_low + prev_close) / 3
-    df['r1'] = (2 * df['pp']) - prev_low
-    df['s1'] = (2 * df['pp']) - prev_high
-    df['r2'] = df['pp'] + (prev_high - prev_low)
-    df['s2'] = df['pp'] - (prev_high - prev_low)
-
-    # คำนวณระยะห่างจากราคาปิดปัจจุบันไปยัง Pivot Points
-    df['dist_to_pp'] = (df['close'] - df['pp']).abs()
-    df['dist_to_r1'] = (df['close'] - df['r1']).abs()
-    df['dist_to_s1'] = (df['close'] - df['s1']).abs()
-    df['dist_to_r2'] = (df['close'] - df['r2']).abs()
-    df['dist_to_s2'] = (df['close'] - df['s2']).abs()
     
     # (ใหม่) คำนวณ MAs สำหรับวิเคราะห์ Trend
     df['ma_9'] = ta.sma(df['close'], length=9)
     df['ma_18'] = ta.sma(df['close'], length=18)
     df['ma_50'] = ta.sma(df['close'], length=50)
-    
-    # (ใหม่) คำนวณ Volume SMA เพื่อใช้วิเคราะห์ Volume
-    if 'volume' in df.columns:
-        df['volume_sma_20'] = ta.sma(df['volume'], length=20)
-
-    # (ใหม่) เพิ่ม Feature วิเคราะห์ Trend โดยตรงให้เหมือนกับตอนเทรน
-    # กำหนดเงื่อนไขของ Trend
-    uptrend_condition = (df['ma_9'] > df['ma_18']) & (df['ma_18'] > df['ma_50'])
-    downtrend_condition = (df['ma_9'] < df['ma_18']) & (df['ma_18'] < df['ma_50'])
-
-    # สร้างคอลัมน์ trend_status: 1 = Uptrend, -1 = Downtrend, 0 = Sideways
-    df['trend_status'] = 0 # ค่าเริ่มต้นเป็น Sideways
-    df.loc[uptrend_condition, 'trend_status'] = 1
-    df.loc[downtrend_condition, 'trend_status'] = -1
-    df['is_trending'] = df['trend_status'].abs() # จะได้ค่า 1 ถ้าเป็น Uptrend/Downtrend, 0 ถ้าเป็น Sideways
 
     df.dropna(inplace=True)
     return df
@@ -72,12 +40,12 @@ def analyze_trend(df):
 
 def analyze_volume(df):
     """วิเคราะห์ Volume โดยเปรียบเทียบกับค่าเฉลี่ย"""
-    if df.empty or 'volume' not in df.columns or 'volume_sma_20' not in df.columns:
+    if df.empty or 'volume' not in df.columns or df['volume'].sum() == 0:
         return 'N/A'
     
     last_row = df.iloc[-1]
     current_volume = last_row['volume']
-    avg_volume = last_row['volume_sma_20']
+    avg_volume = df['volume'].rolling(window=20).mean().iloc[-1]
 
     if current_volume > avg_volume * 1.5:
         return 'High'
@@ -115,13 +83,13 @@ def main():
         model = joblib.load(model_path)
 
         # 4. เตรียมข้อมูลสำหรับทำนาย
+        # (แก้ไข) ทำให้รายการ Feature ตรงกับที่ใช้ใน train_model.py
         feature_cols = [
-            'RSI_14', 'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
-            'BBL_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
-            'ATRr_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3',
-            'dist_to_pp', 'dist_to_r1', 'dist_to_s1',
-            'dist_to_r2', 'dist_to_s2',
-            'trend_status', 'is_trending', 's1', 'r1' # (แก้ไข) เพิ่ม Features ที่ขาดไปให้ตรงกับตอนเทรน
+            'RSI_14', 
+            'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
+            'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+            'ATRr_14', 
+            'STOCHk_14_3_3', 'STOCHd_14_3_3'
         ]
         current_features = df_features.iloc[-1:][feature_cols]
 

@@ -42,11 +42,13 @@ const MarketAnalysisPanel = ({ aiSignal, isLoading, isRequestingSignal, symbol, 
                             <div className="card-value">{aiSignal.trend}</div>
                         </div>
 
-                        {/* Volume Card */}
-                        <div className="analysis-card">
-                            <div className="card-label">Volume</div>
-                            <div className="card-value">{aiSignal.volume}</div>
-                        </div>
+                        {/* (แก้ไข) Volume Card: แสดงก็ต่อเมื่อมีข้อมูล Volume ที่ไม่ใช่ 'Not Available' */}
+                        {aiSignal.volume && aiSignal.volume !== 'Not Available' && (
+                            <div className={`analysis-card volume-${aiSignal.volume?.toLowerCase()}`}>
+                                <div className="card-label">Volume</div>
+                                <div className="card-value">{aiSignal.volume}</div>
+                            </div>
+                        )}
 
                         {/* (ใหม่) Support Card */}
                         <div className="analysis-card support">

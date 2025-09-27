@@ -25,12 +25,23 @@ const getDecimalPlaces = (symbol) => {
  * @returns {{supports: number[], resistances: number[]}}
  */ 
 const findDynamicLevels = (ohlcData, lookback = 100) => {
-    // (แก้ไข) ปรับปรุง Logic ทั้งหมดให้ถูกต้องและแม่นยำขึ้น โดยใช้ Fractals
+    // (ใหม่) กรองข้อมูล Outliers ออกก่อน
+    // คำนวณค่าเฉลี่ยและ Standard Deviation ของราคาปิด
+    const closes = ohlcData.map(d => d.close);
+    const mean = closes.reduce((a, b) => a + b, 0) / closes.length;
+    const stdDev = Math.sqrt(closes.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / closes.length);
+
+    // กรองข้อมูลที่อยู่ห่างจากค่าเฉลี่ยเกิน 5 เท่าของ Standard Deviation ออกไป
+    const filteredData = ohlcData.filter(d => 
+        Math.abs(d.high - mean) < 5 * stdDev &&
+        Math.abs(d.low - mean) < 5 * stdDev
+    );
+
     const supports = [];
     const resistances = [];
-    const highs = ohlcData.map(d => d.high);
-    const lows = ohlcData.map(d => d.low);
-    const currentPrice = ohlcData[ohlcData.length - 1].close;
+    const highs = filteredData.map(d => d.high);
+    const lows = filteredData.map(d => d.low);
+    const currentPrice = filteredData[filteredData.length - 1].close;
 
     // Fractal ต้องการข้อมูล 5 แท่ง (2 แท่งซ้าย, แท่งกลาง, 2 แท่งขวา)
     // เราจะเริ่มตรวจสอบจากแท่งที่ 3 จากท้ายสุด (index: length - 3)
@@ -55,14 +66,14 @@ const findDynamicLevels = (ohlcData, lookback = 100) => {
 
     // --- (ใหม่) เพิ่มแผนสำรอง ในกรณีที่หา Fractal ไม่เจอ ---
     // ถ้ายังหาแนวต้านไม่เจอ (เช่น ในสภาวะ Uptrend แรงๆ) ให้ใช้ Highest High ในช่วง lookback
-    if (resistances.length === 0) {
-        const recentHighs = ohlcData.slice(-lookback).map(d => d.high);
+    if (resistances.length === 0 && filteredData.length >= lookback) {
+        const recentHighs = filteredData.slice(-lookback).map(d => d.high);
         resistances.push(Math.max(...recentHighs));
     }
 
     // ถ้ายังหาแนวรับไม่เจอ ให้ใช้ Lowest Low ในช่วง lookback
-    if (supports.length === 0) {
-        const recentLows = ohlcData.slice(-lookback).map(d => d.low);
+    if (supports.length === 0 && filteredData.length >= lookback) {
+        const recentLows = filteredData.slice(-lookback).map(d => d.low);
         supports.push(Math.min(...recentLows));
     }
 
@@ -140,6 +151,7 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
         const highs = ohlcData.map(d => d.high);
         const lows = ohlcData.map(d => d.low);
         const currentClose = closes[closes.length - 1];
+        const volumes = ohlcData.map(d => d.volume).filter(Boolean); // (ใหม่) ดึงข้อมูล Volume
         const decimalPlaces = getDecimalPlaces(normalizedSymbol);
  
         // --- (ปรับปรุง) ย้ายการคำนวณทั้งหมดไปให้ Python จัดการ ---
@@ -151,27 +163,9 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             // ส่งข้อมูล OHLC ย้อนหลังตามที่ Python ต้องการ
             const dataForPython = ohlcData
                 .slice(-python_sequence_length)
-                .map((d, i, arr) => {
-                    const candleData = { open: d.open, high: d.high, low: d.low, close: d.close };
-                    
-                    // (ใหม่) คำนวณ Pivot Points สำหรับแต่ละแท่งเทียน
-                    // เราต้องการข้อมูลของแท่งก่อนหน้า (i-1) ในการคำนวณ
-                    if (i > 0) {
-                        const prevCandle = arr[i - 1];
-                        const H = prevCandle.high, L = prevCandle.low, C = prevCandle.close;
-                        const PP = (H + L + C) / 3;
-                        const R1 = (2 * PP) - L, S1 = (2 * PP) - H;
-                        const R2 = PP + (H - L), S2 = PP - (H - L);
-                        // (แก้ไข) เพิ่มข้อมูล Pivot Points เข้าไปใน object ที่จะส่งไปให้ Python
-                        candleData.pp = PP;
-                        candleData.r1 = R1;
-                        candleData.s1 = S1;
-                        candleData.r2 = R2;
-                        candleData.s2 = S2;
-                    }
-
-                    return candleData;
-                });
+                // (แก้ไข) ส่งข้อมูล OHLC ไปตรงๆ โดยไม่ต้องเพิ่ม Pivot Points
+                // เพราะโมเดลไม่ได้ถูกเทรนด้วยข้อมูลนี้
+                .map(d => ({ open: d.open, high: d.high, low: d.low, close: d.close }));
  
             const pythonArgs = [normalizedSymbol, JSON.stringify(dataForPython), modelFileName];
 
@@ -262,6 +256,38 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             }
         }
  
+        // --- (ย้ายมาไว้ตรงนี้) คำนวณ Trend และ Volume หลังจากจัดการทุกอย่างเสร็จสิ้น ---
+        // เพื่อให้แน่ใจว่าค่านี้จะถูกคำนวณและส่งกลับไปเสมอ
+        const sma20 = SMA.calculate({ period: 20, values: closes });
+        if (sma20.length > 0) {
+            const lastSma = sma20[sma20.length - 1];
+            if (currentClose > lastSma) {
+                aiSignalData.trend = 'Uptrend';
+            } else if (currentClose < lastSma) {
+                aiSignalData.trend = 'Downtrend';
+            } else {
+                aiSignalData.trend = 'Sideways';
+            }
+        }
+
+        // (แก้ไข) เปลี่ยนมาใช้ Volatility (ATR) เป็นตัวแทนของ Volume
+        // เนื่องจากข้อมูล Volume ของ Forex ไม่มีมาตรฐาน
+        try {
+            const atrInput = { high: highs, low: lows, close: closes, period: 14 };
+            const atrResult = require('technicalindicators').ATR.calculate(atrInput);
+            if (atrResult.length > 20) {
+                const lastAtr = atrResult[atrResult.length - 1];
+                const avgAtr = SMA.calculate({ period: 20, values: atrResult }).pop();
+                if (lastAtr > avgAtr * 1.2) {
+                    aiSignalData.volume = 'High'; // Volatility สูง
+                } else {
+                    aiSignalData.volume = 'Normal'; // Volatility ปกติ
+                }
+            }
+        } catch (e) {
+            // ไม่ต้องทำอะไรถ้าคำนวณไม่ได้
+        }
+
         // (แก้ไข) บันทึก Signal ที่ไม่ใช่ HOLD ลงในฐานข้อมูลตามโครงสร้างใหม่
         if (userId && db && aiSignalData.signal && aiSignalData.signal !== 'HOLD') {
             try {

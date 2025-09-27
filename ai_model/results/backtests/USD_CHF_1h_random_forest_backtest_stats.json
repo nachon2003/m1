@@ -1,11 +1,12 @@
 {
     "symbol":"USD\/CHF",
-    "return_pct":-0.03405136,
-    "buy_and_hold_return_pct":0.070723297,
-    "max_drawdown_pct":-0.0459211899,
-    "win_rate_pct":25.0,
-    "total_trades":4,
-    "profit_factor":0.1728191869,
-    "sharpe_ratio":-2.7363749126,
-    "duration_days":57
+    "timeframe":"1h",
+    "return_pct":-0.0150754799,
+    "buy_and_hold_return_pct":-0.4122506796,
+    "max_drawdown_pct":-0.0347209162,
+    "win_rate_pct":57.1428571429,
+    "total_trades":7,
+    "profit_factor":0.6817367733,
+    "sharpe_ratio":-1.1659973082,
+    "duration_days":71
 }

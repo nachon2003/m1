@@ -82,7 +82,14 @@ const getOhlcData = async (symbol, timeframe = '4h') => {
         const tdResponse = await axios.get(twelveDataUrl);
 
         if (tdResponse.data && tdResponse.data.values && tdResponse.data.values.length > 0) {
-            const ohlcData = tdResponse.data.values.map(d => ({ time: new Date(d.datetime), open: parseFloat(d.open), high: parseFloat(d.high), low: parseFloat(d.low), close: parseFloat(d.close), })).reverse();
+            const ohlcData = tdResponse.data.values.map(d => ({ 
+                time: new Date(d.datetime), 
+                open: parseFloat(d.open), 
+                high: parseFloat(d.high), 
+                low: parseFloat(d.low), 
+                close: parseFloat(d.close), 
+                volume: d.volume ? parseInt(d.volume, 10) : 0 // (แก้ไข) เพิ่ม volume เข้ามา
+            })).reverse();
             console.log(`Successfully fetched ${ohlcData.length} OHLC data points for ${timeframe} from Twelve Data.`);
             
             // 4. บันทึกข้อมูลลงไฟล์แคชเพื่อใช้ในอนาคต

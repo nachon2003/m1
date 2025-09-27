@@ -9,6 +9,7 @@ import LoginModal from './components/LoginModal';
 import NewsModal from './components/NewsModal'; 
 import ProfileModal from './components/ProfileModal';
 import StatisticsModal from './components/StatisticsModal';
+import './components/StatisticsModal.css'; // (ใหม่) Import CSS สำหรับ StatisticsModal
 import SupportModal from './components/SupportModal'; // (ใหม่) Import Support Modal
 import TradeSignalDetails from './components/TradeSignalDetails';
 import MarketAnalysisPanel from './components/MarketAnalysisPanel';

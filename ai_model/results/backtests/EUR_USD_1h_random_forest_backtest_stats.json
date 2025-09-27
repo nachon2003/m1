@@ -1,11 +1,12 @@
 {
     "symbol":"EUR\/USD",
-    "return_pct":-0.02363874,
-    "buy_and_hold_return_pct":0.5292583565,
-    "max_drawdown_pct":-0.0576387793,
-    "win_rate_pct":60.0,
+    "timeframe":"1h",
+    "return_pct":-0.08303772,
+    "buy_and_hold_return_pct":0.7060651595,
+    "max_drawdown_pct":-0.0981612486,
+    "win_rate_pct":30.0,
     "total_trades":10,
-    "profit_factor":0.5396876035,
-    "sharpe_ratio":-1.1519072986,
-    "duration_days":56
+    "profit_factor":0.1591059028,
+    "sharpe_ratio":-3.6200247637,
+    "duration_days":71
 }
