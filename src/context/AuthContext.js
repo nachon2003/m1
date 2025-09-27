@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import eventBus from '../eventBus';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const AuthContext = createContext(null);
 
@@ -161,7 +162,12 @@ export const AuthProvider = ({ children }) => {
         requestPasswordReset, // <-- (ใหม่) ส่งฟังก์ชันนี้ผ่าน Context
     };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+            <SpeedInsights />
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => {
