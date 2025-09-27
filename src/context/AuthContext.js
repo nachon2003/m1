@@ -1,11 +1,12 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import eventBus from '../eventBus';
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 
 const AuthContext = createContext(null);
 
 // --- (แนะนำ) กำหนด Base URL ของ API ที่นี่ที่เดียว ---
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://my-ai-signal-api.onrender.com';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -166,6 +167,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={value}>
             {children}
             <SpeedInsights />
+            <Analytics />
         </AuthContext.Provider>
     );
 };

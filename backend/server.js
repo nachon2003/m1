@@ -75,7 +75,7 @@ const newsCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 120 }); // 5 minu
 // กำหนด URL ของ Frontend ที่จะอนุญาตให้เรียก API ได้
 const allowedOrigins = [
     'https://m1-two-topaz.vercel.app', // URL ของ Frontend บน Vercel ที่คุณให้มา
-    // 'http://localhost:3000'           // URL สำหรับการพัฒนาบนเครื่อง (dev server)
+    'http://localhost:3000'           // URL สำหรับการพัฒนาบนเครื่อง (dev server)
 ];
 
 const corsOptions = {
