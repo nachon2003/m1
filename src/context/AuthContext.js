@@ -3,6 +3,9 @@ import eventBus from '../eventBus';
 
 const AuthContext = createContext(null);
 
+// --- (แนะนำ) กำหนด Base URL ของ API ที่นี่ที่เดียว ---
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(() => localStorage.getItem('token'));
@@ -26,8 +29,7 @@ export const AuthProvider = ({ children }) => {
         const verifyToken = async () => {
             if (token) {
                 try {
-                    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-                    const response = await fetch(`${apiUrl}/api/auth/verify`, {
+                    const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (response.ok) {
@@ -48,8 +50,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${apiUrl}/api/auth/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
@@ -68,8 +69,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (username, password, email) => {
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${apiUrl}/api/auth/register`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password, email }),
@@ -90,8 +90,7 @@ export const AuthProvider = ({ children }) => {
 
     const changePassword = async (currentPassword, newPassword) => {
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${apiUrl}/api/auth/change-password`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -112,8 +111,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateEmail = async (newEmail) => {
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${apiUrl}/api/auth/update-email`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/update-email`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -134,8 +132,7 @@ export const AuthProvider = ({ children }) => {
     // --- (ใหม่) เพิ่มฟังก์ชันนี้เข้ามา ---
     const requestPasswordReset = async (email) => {
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${apiUrl}/api/auth/forgot-password`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
