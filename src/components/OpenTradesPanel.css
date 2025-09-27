@@ -1,0 +1,138 @@
+/* src/components/OpenTradesPanel.css */
+.open-trades-panel {
+    background-color: var(--tertiary-dark);
+    padding: 20px;
+    margin-top: 15px;
+    border-radius: var(--border-radius-main);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.open-trades-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+}
+
+.open-trades-panel h4 {
+    margin: 0;
+    color: var(--accent-blue);
+    font-size: 1.6em;
+}
+
+.open-trades-panel .total-pl {
+    font-size: 1.4em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.trades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 150px; /* กำหนดความสูงสูงสุดให้แสดงประมาณ 2-3 รายการ */
+    overflow-y: auto; /* แสดง scrollbar แนวตั้งเมื่อเนื้อหาเกิน */
+    padding-right: 10px; /* เพิ่มช่องว่างด้านขวาสำหรับ scrollbar */
+}
+
+.trade-item {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr 0.8fr 1fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: var(--secondary-dark);
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-family: 'Fira Code', monospace;
+    border-left: 4px solid transparent;
+    transition: background-color 0.2s ease;
+}
+
+.trade-item:hover {
+    background-color: #38385d;
+}
+
+.trade-item.header {
+    font-weight: 700;
+    color: var(--text-dim);
+    background-color: transparent;
+    border-bottom: none;
+    padding-bottom: 10px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.trade-item span {
+    text-align: center;
+}
+
+.trade-item .signal-buy {
+    color: var(--accent-green);
+    font-weight: 700;
+}
+
+.trade-item .signal-sell {
+    color: var(--accent-red);
+    font-weight: 700;
+}
+
+.trade-item .profit {
+    color: var(--accent-green);
+    font-weight: 700;
+}
+
+.trade-item .loss {
+    color: var(--accent-red);
+    font-weight: 700;
+}
+
+.pips-value {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    margin-left: 8px;
+    font-style: italic;
+}
+
+.close-trade-button {
+    background-color: var(--accent-red);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.close-trade-button:hover {
+    background-color: #d81b60;
+}
+
+.close-all-button {
+    background-color: transparent;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.close-all-button:hover {
+    background-color: var(--accent-red);
+    color: white;
+}
+
+.no-open-trades {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 20px;
+    font-style: italic;
+}

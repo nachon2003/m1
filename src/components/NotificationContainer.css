@@ -1,0 +1,49 @@
+/* src/components/NotificationContainer.css */
+
+.notification-container {
+    position: fixed;
+    top: 80px; /* Position below the header */
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification-item {
+    width: 320px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    animation: slideInRight 0.5s ease-out, fadeOut 0.5s ease-out 4.5s forwards;
+    border-left: 5px solid;
+}
+
+.notification-item p {
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Different types of notifications */
+.notification-item.info {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue-light);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: scale(0.9); }
+}

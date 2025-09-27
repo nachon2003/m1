@@ -1,0 +1,199 @@
+/* src/components/StatisticsModal.css */
+
+/* (แก้ไข) ปรับความกว้างของ Modal ให้ใช้พื้นที่ 95% ของหน้าจอเพื่อให้เห็นตารางเต็ม */
+.stats-modal.modal-content {
+    width: 95%;      /* ใช้ความกว้าง 95% ของหน้าจอ */
+    max-width: 1600px; /* แต่ไม่เกิน 1600px สำหรับจอที่ใหญ่มากๆ */
+}
+
+.stats-modal .modal-body {
+    max-height: 80vh;
+    overflow-y: auto; /* (แก้ไข) ทำให้เนื้อหาที่เกินสามารถ scroll ได้ */
+    padding: 1rem;
+}
+
+/* --- (ใหม่) สไตล์สำหรับส่วนสรุปสถิติ --- */
+.stats-summary-grid {
+    display: flex; /* เปลี่ยนเป็น flexbox เพื่อจัดเรียงแนวนอน */
+    justify-content: space-around; /* จัดช่องว่างให้เท่าๆ กัน */
+    gap: 1rem; /* ระยะห่างระหว่างการ์ด */
+    margin-bottom: 2rem; /* ระยะห่างจากตาราง */
+    flex-wrap: wrap; /* ทำให้ขึ้นบรรทัดใหม่บนจอเล็ก */
+}
+
+.stat-card {
+    background-color: var(--tertiary-dark);
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius-main);
+    text-align: center;
+    flex-grow: 1; /* ทำให้การ์ดขยายเต็มพื้นที่ */
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    min-width: 150px; /* ความกว้างขั้นต่ำ */
+}
+
+.stat-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-dim);
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.stat-card p {
+    margin: 0;
+    font-size: 2em;
+    font-weight: 700;
+    color: var(--text-light);
+}
+
+.stat-card.win p {
+    color: var(--accent-green);
+}
+
+.stat-card.loss p {
+    color: var(--accent-red);
+}
+
+.stats-table-container {
+    width: 100%;
+    overflow-x: auto; /* ทำให้ตารางเลื่อนซ้าย-ขวาได้บนจอเล็ก */
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+    min-width: 1100px; /* กำหนดความกว้างขั้นต่ำของตารางเพื่อให้แน่ใจว่า layout ไม่พังบนจอเล็ก */
+}
+
+.stats-table th, .stats-table td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    white-space: nowrap; /* ป้องกันการตัดคำ */
+}
+
+.stats-table th {
+    background-color: var(--tertiary-dark);
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    cursor: pointer; /* (ใหม่) ทำให้รู้ว่าคลิกได้ */
+    user-select: none; /* (ใหม่) ป้องกันการ select text */ 
+}
+
+/* (ใหม่) สไตล์สำหรับลูกศรจัดเรียง */
+.stats-table th::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    margin-left: 5px;
+    opacity: 0.4;
+}
+.stats-table th.ascending::after {
+    border-bottom: 5px solid #fff;
+}
+.stats-table th.descending::after {
+    border-top: 5px solid #fff;
+}
+
+.stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.stats-table tbody tr:hover {
+    background-color: var(--tertiary-dark);
+}
+
+/* --- (ใหม่) สไตล์สำหรับคอลัมน์ต่างๆ --- */
+.stats-table .signal-buy {
+    color: var(--accent-green);
+    font-weight: bold;
+}
+
+.stats-table .signal-sell {
+    color: var(--accent-red);
+    font-weight: bold;
+}
+
+.stats-table .source-ai {
+    color: var(--accent-blue);
+    font-weight: bold;
+}
+
+.stats-table .source-technical {
+    color: var(--accent-purple);
+    font-weight: bold;
+}
+
+/* (ใหม่) สไตล์สำหรับราคา TP/SL */
+.stats-table .price-tp {
+    color: var(--accent-green);
+}
+.stats-table .price-sl {
+    color: var(--accent-red);
+}
+
+/* (ใหม่) สไตล์สำหรับ P/L */
+.stats-table .profit {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+.stats-table .loss {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+.stats-table .status-open {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: var(--accent-yellow);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* (ใหม่) สไตล์สำหรับสถานะ Pending */
+.stats-table .status-pending {
+    background-color: rgba(0, 188, 212, 0.1);
+    color: var(--accent-blue);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* (ใหม่) สไตล์สำหรับสถานะการปิดที่ละเอียดขึ้น */
+.stats-table .status-closed_tp {
+    background-color: rgba(76, 175, 80, 0.15);
+    color: var(--accent-green);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.stats-table .status-closed_sl {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: var(--accent-red);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.error-message {
+    color: var(--accent-red);
+    background-color: rgba(244, 67, 54, 0.1);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+}

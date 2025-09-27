@@ -1,0 +1,158 @@
+/* src/components/TicketDetailModal.css */
+.ticket-detail-modal {
+    max-width: 700px;
+    width: 90%;
+}
+
+.ticket-detail-modal .modal-body {
+    padding: 1.5rem;
+    max-height: 75vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background-dark); /* (ใหม่) เปลี่ยนพื้นหลังให้เข้มขึ้น */
+}
+
+.ticket-info {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--tertiary-dark); /* (ใหม่) เพิ่มพื้นหลังให้ส่วนข้อมูล */
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.ticket-info p {
+    margin: 0.5rem 0;
+}
+
+.conversation-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* (แก้ไข) ลดช่องว่างระหว่างข้อความ */
+    padding: 1rem 0.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.message-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.message-author {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 0.25rem;
+}
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 20px;
+    word-wrap: break-word;
+    line-height: 1.5;
+    max-width: 80%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+/* --- ข้อความของฉัน (ฝั่งขวา) --- */
+.message-item.my-message {
+    align-items: flex-end;
+}
+
+.my-bubble {
+    background: linear-gradient(45deg, var(--accent-blue), var(--accent-blue-light));
+    color: #0f0f1a; /* (ใหม่) ใช้สีตัวอักษรเข้มเพื่อให้ตัดกับพื้นหลังสว่าง */
+    border-bottom-right-radius: 5px;
+}
+
+/* --- ข้อความของคนอื่น (ฝั่งซ้าย) --- */
+.message-item.their-message {
+    align-items: flex-start;
+}
+
+.their-bubble {
+    background-color: var(--tertiary-dark);
+    color: var(--text-light);
+    border-bottom-left-radius: 5px;
+}
+
+.message-timestamp {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.25rem;
+}
+
+/* --- ฟอร์มตอบกลับ --- */
+.reply-form {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: var(--tertiary-dark);
+    border-radius: 12px;
+    margin-top: auto; /* (ใหม่) ดันฟอร์มลงไปอยู่ด้านล่างสุด */
+}
+
+.reply-form textarea {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border-radius: 20px; /* (ใหม่) ทำให้ขอบโค้งมน */
+    border: 1px solid var(--border-color);
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    resize: none; /* (ใหม่) ปิดการย่อขยาย */
+    min-height: 24px;
+    max-height: 120px;
+    font-size: 1rem;
+    line-height: 1.4;
+    transition: border-color 0.3s ease;
+}
+
+.reply-form textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.reply-form button {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 50%; /* (ใหม่) ทำให้เป็นวงกลม */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.reply-form button:hover:not(:disabled) {
+    background-color: var(--accent-blue-light);
+    transform: scale(1.1);
+}
+
+.reply-form button:disabled {
+    background-color: var(--text-dim);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* (ใหม่) สไตล์สำหรับ Spinner ตอนกำลังส่ง */
+.reply-form .spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

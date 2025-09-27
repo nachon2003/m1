@@ -1,0 +1,11 @@
+{
+    "symbol":"USD\/CHF",
+    "return_pct":0.0057741701,
+    "buy_and_hold_return_pct":-1.5320386368,
+    "max_drawdown_pct":-0.0091351244,
+    "win_rate_pct":100.0,
+    "total_trades":2,
+    "profit_factor":null,
+    "sharpe_ratio":1.8465380256,
+    "duration_days":28
+}

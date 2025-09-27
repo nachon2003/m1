@@ -1,0 +1,7 @@
+pandas
+pandas-ta
+scikit-learn
+joblib
+numpy
+requests
+backtesting

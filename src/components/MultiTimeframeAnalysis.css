@@ -1,0 +1,91 @@
+/* src/components/MultiTimeframeAnalysis.css */
+
+.multi-timeframe-container {
+    background-color: var(--background-dark);
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: var(--border-radius-main);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.container-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+    color: var(--accent-blue);
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.timeframe-card {
+    background-color: var(--secondary-dark);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 5px solid var(--border-color);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.timeframe-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.timeframe-card.uptrend {
+    border-left-color: var(--accent-green);
+}
+
+.timeframe-card.downtrend {
+    border-left-color: var(--accent-red);
+}
+
+.timeframe-card.sideways {
+    border-left-color: var(--accent-yellow);
+}
+
+.timeframe-card.loading-card {
+    justify-content: center;
+    align-items: center;
+    color: var(--text-dim);
+}
+
+.timeframe-title {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-light);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.analysis-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.analysis-label {
+    font-size: 0.9em;
+    color: var(--text-dim);
+}
+
+.analysis-value {
+    font-size: 1.1em;
+    font-weight: 600;
+    font-family: 'Fira Code', monospace;
+}
+
+.analysis-value.uptrend { color: var(--accent-green); }
+.analysis-value.downtrend { color: var(--accent-red); }
+.analysis-value.sideways { color: var(--accent-yellow); }

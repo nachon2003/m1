@@ -1,0 +1,154 @@
+/* src/components/NewsModal.css */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7); /* พื้นหลังทึบแสง */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* ให้ Pop-up อยู่เหนือองค์ประกอบอื่นๆ */
+}
+
+.modal-content {
+    background: #282c34; /* สีพื้นหลังเดียวกับ App */
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 80vw; /* กว้างสูงสุด 80% ของ viewport width */
+    max-height: 80vh; /* สูงสูงสุด 80% ของ viewport height */
+    overflow-y: auto; /* มี Scrollbar ถ้าเนื้อหาเกิน */
+    position: relative;
+    color: white; /* สีตัวอักษร */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    animation: fadeInScale 0.3s ease-out; /* เพิ่ม animation */
+}
+
+/* Animation */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.close-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-content h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #61dafb; /* สีฟ้าอ่อน */
+}
+
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* ปรับให้แสดง 2-3 คอลัมน์ตามขนาดหน้าจอ */
+    gap: 25px; /* ระยะห่างระหว่างข่าว */
+}
+
+.news-item {
+    background: #3a3f47; /* สีพื้นหลังแต่ละข่าว */
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.news-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.news-image {
+    width: 100%;
+    height: 180px; /* กำหนดความสูงภาพ */
+    object-fit: cover; /* ครอบคลุมพื้นที่ */
+    border-bottom: 1px solid #4a4f57;
+}
+
+.news-text-content {
+    padding: 15px;
+    flex-grow: 1; /* ให้เนื้อหาขยายเต็มที่ */
+    display: flex;
+    flex-direction: column;
+}
+
+.news-item h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    line-height: 1.4;
+}
+
+.news-item h3 a {
+    color: #61dafb;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.news-item h3 a:hover {
+    color: #a4e4fc;
+}
+
+.news-description {
+    font-size: 0.9em;
+    color: #ccc;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    flex-grow: 1; /* ทำให้คำอธิบายขยายเพื่อดัน source/date ลงล่าง */
+}
+
+.news-source-date {
+    font-size: 0.8em;
+    color: #999;
+    margin-top: auto; /* ดันไปอยู่ด้านล่างสุดของ news-text-content */
+}
+
+.error-message {
+    color: #ff6b6b;
+    text-align: center;
+    font-size: 1.1em;
+    margin-top: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 20px;
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+
+    .news-list {
+        grid-template-columns: 1fr; /* บนมือถือแสดงแค่คอลัมน์เดียว */
+    }
+
+    .close-button {
+        font-size: 20px;
+        top: 10px;
+        right: 10px;
+    }
+}

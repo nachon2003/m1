@@ -1,0 +1,169 @@
+/* src/components/TradeSignalDetails.css */
+
+.trade-details-container {
+    background-color: var(--secondary-dark);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-main);
+    padding: 25px;
+    margin-top: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    text-align: left;
+    transition: all 0.3s ease;
+    border-left: 5px solid var(--tertiary-dark); /* Default border color */
+}
+
+/* Add a neon border and shadow based on the signal */
+.trade-details-container.buy {
+    border-left-color: var(--accent-green);
+    box-shadow: 0 0 25px -5px var(--accent-green-glow);
+}
+
+.trade-details-container.sell {
+    border-left-color: var(--accent-red);
+    box-shadow: 0 0 25px -5px var(--accent-red-glow);
+}
+
+.trade-details-container.loading,
+.trade-details-container.no-signal {
+    text-align: center;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 40px 20px;
+    border-left-color: var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.trade-details-title {
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 1.4em;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+
+.trade-details-grid {
+    display: grid;
+    /* Create adaptable columns */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.trade-detail-item {
+    background-color: var(--primary-dark);
+    padding: 15px;
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--border-color);
+}
+
+.trade-detail-label {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.trade-detail-value.positive {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+/* Neon glow for specific values */
+.trade-detail-value.signal-buy {
+    color: var(--accent-green);
+    text-shadow: 0 0 8px var(--accent-green-glow);
+}
+
+.trade-detail-value.signal-sell {
+    color: var(--accent-red);
+    text-shadow: 0 0 8px var(--accent-red-glow);
+}
+
+.trade-detail-value.positive {
+    color: var(--accent-green);
+}
+
+.trade-detail-value.negative {
+    color: var(--accent-red);
+}
+
+/* --- Trade Execution Section --- */
+.trade-execution-section {
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.lot-size-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lot-size-input-group label {
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--text-dim);
+}
+
+.lot-size-input-group input {
+    width: 80px;
+    padding: 10px;
+    background-color: var(--primary-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-small);
+    font-size: 1.1em;
+    text-align: center;
+    font-family: var(--font-mono);
+    transition: all 0.2s ease;
+}
+
+.lot-size-input-group input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px var(--accent-blue-glow);
+}
+
+.execute-trade-button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: var(--border-radius-small);
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #0D1117; /* Dark text on bright button */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.execute-trade-button.buy {
+    background-color: var(--accent-green);
+    box-shadow: 0 0 15px var(--accent-green-glow);
+}
+
+.execute-trade-button.buy:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 25px var(--accent-green-glow);
+}
+
+.execute-trade-button.sell {
+    background-color: var(--accent-red);
+    box-shadow: 0 0 15px var(--accent-red-glow);
+}
+
+.execute-trade-button.sell:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 25px var(--accent-red-glow);
+}

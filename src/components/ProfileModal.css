@@ -1,0 +1,99 @@
+/* src/components/ProfileModal.css */
+
+/* (ใหม่) กรอบสำหรับแต่ละส่วน */
+.profile-modal .profile-section {
+    background-color: var(--tertiary-dark);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+}
+
+/* (ใหม่) หัวข้อของแต่ละส่วน */
+.profile-modal .section-title {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+/* (แก้ไข) ปรับปรุงส่วนรูปโปรไฟล์ให้สอดคล้องกับดีไซน์ใหม่ */
+/* .profile-modal .profile-card {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.profile-modal .profile-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.profile-modal .profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover; 
+    border: 3px solid var(--accent-blue);
+}
+
+.profile-modal .upload-button,
+.profile-modal .submit-button {
+    background-color: var(--accent-blue);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.profile-modal .upload-button:hover,
+.profile-modal .submit-button:hover {
+    background-color: var(--accent-blue-light);
+}
+
+.profile-modal .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-modal .form-group label {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: var(--text-dim);
+}
+
+.profile-modal .form-group input {
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+.profile-modal .form-group input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3);
+}
+
+.profile-modal .success-message {
+    color: var(--accent-green);
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.profile-modal .error-message {
+    color: var(--accent-red);
+    margin-top: 1rem;
+    text-align: center;
+}
+*/

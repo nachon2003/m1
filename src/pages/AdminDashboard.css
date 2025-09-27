@@ -1,0 +1,67 @@
+/* src/pages/AdminDashboard.css */
+.admin-dashboard-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.admin-header h1 {
+    color: var(--text-light);
+    margin: 0;
+}
+
+.admin-header-left { /* (ใหม่) */
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.back-to-app-button { /* (ใหม่) */
+    background-color: var(--tertiary-dark);
+    color: var(--text-dim);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.back-to-app-button:hover {
+    background-color: var(--tertiary-dark-hover);
+    color: var(--text-light);
+}
+
+.admin-nav button {
+    background: none;
+    border: 2px solid var(--border-color-light);
+    color: var(--text-dim);
+    padding: 0.6rem 1.2rem;
+    margin-left: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.admin-nav button:hover {
+    background-color: var(--tertiary-dark);
+    color: var(--text-light);
+}
+
+.admin-nav button.active {
+    background-color: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}

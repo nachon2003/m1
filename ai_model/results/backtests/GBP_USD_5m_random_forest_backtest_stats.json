@@ -1,0 +1,11 @@
+{
+    "symbol":"GBP\/USD",
+    "return_pct":-0.00821632,
+    "buy_and_hold_return_pct":-0.7859369486,
+    "max_drawdown_pct":-0.02053808,
+    "win_rate_pct":50.0,
+    "total_trades":2,
+    "profit_factor":0.2846784661,
+    "sharpe_ratio":-0.4342477314,
+    "duration_days":3
+}

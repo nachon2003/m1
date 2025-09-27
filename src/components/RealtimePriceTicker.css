@@ -1,0 +1,114 @@
+/* src/components/RealtimePriceTicker.css */
+
+.realtime-price-ticker {
+    background-color: #1e222d; /* A dark, neutral background */
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    color: #d1d4dc; /* A light grey for default text */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.ticker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #363c4e; /* A subtle separator */
+    padding-bottom: 10px;
+}
+
+.ticker-header h3 {
+    margin: 0;
+    padding: 0;
+    border: none;
+    font-size: 1.1em;
+    color: #fff;
+}
+
+.connection-status {
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+    color: #00c853; /* A vibrant green */
+    background-color: rgba(0, 200, 83, 0.15);
+}
+
+.connection-status.disconnected {
+    color: #ff5252; /* A clear red */
+    background-color: rgba(255, 82, 82, 0.15);
+}
+
+.price-list {
+    display: grid;
+    /* Create responsive columns that are at least 150px wide */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #282c3a; /* A slightly lighter dark shade */
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+    font-size: 0.95em;
+}
+
+.price-item span:first-child {
+    font-weight: bold;
+    color: #8c96a5; /* A muted color for the symbol name */
+}
+
+.price {
+    font-weight: bold;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Default state */
+.price.same {
+    color: #d1d4dc;
+}
+
+.price.positive {
+    color: #00c853;
+}
+
+.price.negative {
+    color: #ff5252;
+}
+
+/* Animation when an update occurs */
+.price.flash-update.positive {
+    animation: flash-green 0.5s ease-out;
+}
+
+.price.flash-update.negative {
+    animation: flash-red 0.5s ease-out;
+}
+
+@keyframes flash-green {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(0, 200, 83, 0.3); }
+}
+
+@keyframes flash-red {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(255, 82, 82, 0.3); }
+}
+
+.ticker-error {
+    color: #ff5252;
+    background-color: rgba(255, 82, 82, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    margin-top: 10px;
+}
