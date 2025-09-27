@@ -413,14 +413,6 @@ function App() {
 
     return (
         <div className={`App ${theme}-theme`}>
-            {/* (ใหม่) เพิ่มวิดีโอพื้นหลังแบบเคลื่อนไหว (แสดงเฉพาะ dark theme) */}
-            {theme === 'dark' && (
-                <video autoPlay loop muted className="background-video">
-                    {/* คุณสามารถเปลี่ยน URL ของวิดีโอได้ที่นี่ */}
-                    <source src="a1.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-            )}
             <NotificationContainer /> {/* (ใหม่) เพิ่ม Notification Container ที่นี่ */}
             <header className="App-header">
                 <div className="header-left">

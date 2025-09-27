@@ -5,7 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 const AuthContext = createContext(null);
 
 // --- (แนะนำ) กำหนด Base URL ของ API ที่นี่ที่เดียว ---
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://my-ai-signal-api.onrender.com';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
