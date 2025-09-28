@@ -1,12 +1,12 @@
 {
     "symbol":"GBP\/USD",
     "timeframe":"30m",
-    "return_pct":-0.08310216,
-    "buy_and_hold_return_pct":-0.1466167629,
-    "max_drawdown_pct":-0.09277216,
-    "win_rate_pct":25.0,
-    "total_trades":8,
-    "profit_factor":0.0945441363,
-    "sharpe_ratio":-6.2281300046,
+    "return_pct":-0.0309864,
+    "buy_and_hold_return_pct":-0.2047022613,
+    "max_drawdown_pct":-0.0406564,
+    "win_rate_pct":50.0,
+    "total_trades":6,
+    "profit_factor":0.2980416209,
+    "sharpe_ratio":-2.6325841242,
     "duration_days":35
 }

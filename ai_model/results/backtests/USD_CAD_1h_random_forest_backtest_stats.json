@@ -1,12 +1,12 @@
 {
     "symbol":"USD\/CAD",
     "timeframe":"1h",
-    "return_pct":-0.05271958,
-    "buy_and_hold_return_pct":0.8118555759,
-    "max_drawdown_pct":-0.0635853163,
+    "return_pct":-0.0523512,
+    "buy_and_hold_return_pct":0.7868148246,
+    "max_drawdown_pct":-0.0613182069,
     "win_rate_pct":42.8571428571,
     "total_trades":7,
-    "profit_factor":0.216138836,
-    "sharpe_ratio":-3.4198384396,
+    "profit_factor":0.2158017598,
+    "sharpe_ratio":-3.520428132,
     "duration_days":71
 }

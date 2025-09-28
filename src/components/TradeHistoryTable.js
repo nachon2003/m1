@@ -15,7 +15,9 @@ const TradeHistoryTable = () => {
             setIsLoading(true);
             setError(null);
             try {
-                const response = await fetch('/api/statistics/trade-history', {
+                // (แก้ไข) สร้าง URL เต็มโดยใช้ Environment Variable
+                const apiUrl = `${process.env.REACT_APP_API_URL}/api/statistics/trade-history`;
+                const response = await fetch(apiUrl, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

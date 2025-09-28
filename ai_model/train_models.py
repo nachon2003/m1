@@ -12,13 +12,30 @@ import joblib
 from twelvedata import TDClient # (ใหม่) Import library สำหรับดึงข้อมูล
 import pandas_ta as ta # (ใหม่) Import library สำหรับ Technical Indicators
 
+# --- (ใหม่) ค่าคงที่สำหรับ Triple Barrier Method ---
+TP_FACTOR = 2.0  # Take Profit ที่ 2.0 เท่าของความผันผวน
+SL_FACTOR = 1.0  # Stop Loss ที่ 1.0 เท่าของความผันผวน
+LOOK_FORWARD = 20 # มองไปข้างหน้า 20 แท่งเทียน
+
+def map_timeframe_to_api(tf):
+    """(ใหม่) แปลง Timeframe จากรูปแบบที่ใช้ในโปรเจกต์เป็นรูปแบบที่ Twelve Data API เข้าใจ"""
+    mapping = {
+        '1m': '1min',
+        '5m': '5min',
+        '15m': '15min',
+        '30m': '30min',
+        # ไม่ต้องแปลง '1h', '4h' เพราะ API ใช้รูปแบบนี้อยู่แล้ว
+        '1d': '1day',
+    }
+    # คืนค่าที่แปลงแล้ว หรือคืนค่าเดิมถ้าไม่พบใน mapping (เช่น '1h', '4h' จะถูกคืนค่าเดิมซึ่งถูกต้องอยู่แล้ว)
+    return mapping.get(tf, tf)
 
 def get_forex_data(symbol, interval="1day", output_size=5000):
     """
     (ใหม่) ฟังก์ชันสำหรับดึงข้อมูลราคา Forex ย้อนหลังจาก Twelvedata
     """
     # !!! สำคัญ: คุณสามารถเปลี่ยน API Key ได้ที่นี่ หากจำเป็น !!!
-    API_KEY = "0f92aba424b54109a21f7bded3d06417" 
+    API_KEY = "aacd8f885b874127a09198c5e71e02a7" 
     
     if API_KEY == "YOUR_API_KEY_HERE":
         print("!!! กรุณาใส่ Twelvedata API Key ของคุณใน train_models.py ก่อนใช้งาน !!!")
@@ -36,38 +53,94 @@ def get_forex_data(symbol, interval="1day", output_size=5000):
     print("ดึงข้อมูลสำเร็จ!")
     return ts.sort_index() # เรียงข้อมูลจากเก่าไปใหม่
 
+def get_daily_volatility(close, lookback=20):
+    """
+    (ใหม่) คำนวณความผันผวน (Volatility) โดยใช้ standard deviation ของ returns
+    """
+    returns = close.pct_change()
+    volatility = returns.rolling(window=lookback).std().shift(1)
+    return volatility
+
+def apply_triple_barrier(df, tp_factor, sl_factor, look_forward_period):
+    """
+    (ใหม่) ใช้ Triple Barrier Method เพื่อสร้าง Labels (1: Buy, -1: Sell, 0: Hold)
+    """
+    print(f"กำลังสร้าง Labels ด้วย Triple Barrier (TP: {tp_factor}x, SL: {sl_factor}x, Look Forward: {look_forward_period} bars)...")
+    volatility = get_daily_volatility(df['close'])
+    labels = pd.Series(np.nan, index=df.index)
+    
+    for i in range(len(df) - look_forward_period):
+        entry_price = df['close'].iloc[i]
+        vol = volatility.iloc[i]
+
+        if pd.isna(vol) or vol == 0:
+            continue
+
+        # กำหนด Barriers
+        upper_barrier = entry_price + (entry_price * vol * tp_factor)
+        lower_barrier = entry_price - (entry_price * vol * sl_factor)
+        
+        # ตรวจสอบราคาในอนาคต
+        for j in range(1, look_forward_period + 1):
+            future_high = df['high'].iloc[i + j]
+            future_low = df['low'].iloc[i + j]
+            
+            if future_high >= upper_barrier:
+                labels.iloc[i] = 1  # Hit Take Profit (BUY)
+                break
+            
+            if future_low <= lower_barrier:
+                labels.iloc[i] = -1 # Hit Stop Loss (SELL)
+                break
+        
+        if pd.isna(labels.iloc[i]):
+            labels.iloc[i] = 0 # Hit Vertical Barrier (HOLD)
+
+    df['label'] = labels
+    return df
+
 def prepare_features_and_labels(df):
     """(ใหม่) ฟังก์ชันสำหรับสร้าง Features และ Labels จาก DataFrame ดิบ"""
     if df is None or df.empty:
         return None
     
-    print("กำลังสร้าง Features และ Labels...")
-    # (ปรับปรุง) เพิ่ม RSI และ MACD เป็น Features
-    df['returns'] = df['close'].pct_change()
-    df['ma_5'] = df['close'].rolling(window=5).mean()
-    df['ma_20'] = df['close'].rolling(window=20).mean()
-    # ใช้ pandas_ta เพื่อเพิ่ม RSI และ MACD
+    print("กำลังสร้าง Features...")
+    # --- สร้าง Technical Indicators ---
     df.ta.rsi(length=14, append=True)
     df.ta.macd(fast=12, slow=26, signal=9, append=True)
+    df.ta.bbands(length=20, std=2, append=True)
+    df.ta.atr(length=14, append=True)
+    df.ta.stoch(k=14, d=3, smooth_k=3, append=True)
     
-    # Create labels: 1 for BUY (price goes up), -1 for SELL (price goes down), 0 for HOLD
-    df['label'] = 0
-    df.loc[df['close'].shift(-1) > df['close'], 'label'] = 1
-    df.loc[df['close'].shift(-1) < df['close'], 'label'] = -1
+    # --- (แก้ไข) เปลี่ยนมาใช้ Triple-Barrier Method ในการสร้าง Label ---
+    df = apply_triple_barrier(df, tp_factor=TP_FACTOR, sl_factor=SL_FACTOR, look_forward_period=LOOK_FORWARD)
     
     df.dropna(inplace=True)
-    print("สร้าง Features (MA, Returns, RSI, MACD) และ Labels สำเร็จ")
+    
+    # ตรวจสอบว่ามีข้อมูลพอที่จะเทรนหรือไม่
+    if df.empty:
+        print("ข้อมูลไม่เพียงพอหลังจากการสร้าง Features และ Labels")
+        return None
+
+    # แปลง label เป็น integer
+    df['label'] = df['label'].astype(int)
+
+    print("สร้าง Features และ Labels สำเร็จ!")
+    print("\n--- การกระจายตัวของ Label ---")
+    print(df['label'].value_counts(normalize=True))
+
     return df
 
-def train_random_forest(df, symbol):
+def train_random_forest(df, symbol, timeframe):
     """Trains and saves a Random Forest model."""
     print("\n--- Training Random Forest Model ---")
-    # (ปรับปรุง) เพิ่ม Features ใหม่เข้าไปในลิสต์สำหรับเทรนโมเดล
+    # (แก้ไข) อัปเดตรายการ Features ให้ตรงกับที่สร้างใน prepare_features_and_labels
     features = [
-        'open', 'high', 'low', 'close', 
-        'returns', 'ma_5', 'ma_20',
         'RSI_14', 
-        'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9' # MACD ให้ค่ามา 3 เส้น
+        'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
+        'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+        'ATRr_14', 
+        'STOCHk_14_3_3', 'STOCHd_14_3_3'
     ]
     
     print(f"Features ที่ใช้เทรน: {features}")
@@ -90,11 +163,11 @@ def train_random_forest(df, symbol):
     print(classification_report(y_test, y_pred, labels=[-1, 0, 1], zero_division=0))
 
     # Save model
-    model_filename = os.path.join(os.path.dirname(__file__), f"{symbol.replace('/', '_')}_random_forest.joblib")
+    model_filename = os.path.join(os.path.dirname(__file__), 'models', f"{symbol.replace('/', '_')}_{timeframe}_random_forest.joblib")
     joblib.dump(model, model_filename)
     print(f"Random Forest model saved to {model_filename}")
 
-def create_lstm_dataset(dataset, look_back=10, target_index=3):
+def create_lstm_dataset(dataset, look_back=10, target_index=3): # target_index=3 คือ 'close'
     """
     (ปรับปรุง) Creates sequences for LSTM with multiple features.
     The target (y) is the value from the target_index column (e.g., 'close' price).
@@ -106,16 +179,19 @@ def create_lstm_dataset(dataset, look_back=10, target_index=3):
         dataY.append(dataset[i + look_back, target_index]) # Predict the target column
     return np.array(dataX), np.array(dataY)
 
-def train_lstm(df, symbol):
+def train_lstm(df, symbol, timeframe):
     """Trains and saves an LSTM model."""
     print("\n--- Training LSTM Model ---")
-    
-    # (ปรับปรุง) ใช้ Features ชุดเดียวกับ Random Forest
+
+    # (แก้ไข) เพิ่ม 'open', 'high', 'low', 'close' กลับเข้าไปใน features สำหรับ LSTM
+    # เพราะโมเดล LSTM ถูกสร้างมาเพื่อทำนาย 'close' price
     features = [
-        'open', 'high', 'low', 'close', 
-        'returns', 'ma_5', 'ma_20',
+        'open', 'high', 'low', 'close', # เพิ่ม 4 คอลัมน์นี้กลับเข้ามา
         'RSI_14', 
-        'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9'
+        'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
+        'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+        'ATRr_14', 
+        'STOCHk_14_3_3', 'STOCHd_14_3_3'
     ]
     
     # ดึงข้อมูลเฉพาะ Features ที่ต้องการ
@@ -170,19 +246,19 @@ def train_lstm(df, symbol):
     )
 
     # Save model
-    model_filename = os.path.join(os.path.dirname(__file__), f"{symbol.replace('/', '_')}_lstm_model.h5")
+    model_filename = os.path.join(os.path.dirname(__file__), 'models', f"{symbol.replace('/', '_')}_{timeframe}_lstm_model.h5")
     model.save(model_filename)
     print(f"LSTM model saved to {model_filename}")
 
     # Save scaler for prediction
-    scaler_filename = os.path.join(os.path.dirname(__file__), f"{symbol.replace('/', '_')}_lstm_scaler.joblib")
+    scaler_filename = os.path.join(os.path.dirname(__file__), 'models', f"{symbol.replace('/', '_')}_{timeframe}_lstm_scaler.joblib")
     joblib.dump(scaler, scaler_filename)
     print(f"LSTM scaler saved to {scaler_filename}")
 
 
 def main():
     """Main function to run the training process."""
-    # (ปรับปรุง) กำหนดรายชื่อ 6 คู่เงินที่ต้องการเทรนโมเดล
+    # (แก้ไข) กำหนดรายชื่อ Symbols และ Timeframes ที่ต้องการเทรนทั้งหมด
     supported_symbols = [
         'EUR/USD', 
         'GBP/USD', 
@@ -191,34 +267,40 @@ def main():
         'USD/CHF', 
         'XAU/USD'
     ]
+    supported_timeframes = [
+        '1m', '5m', '15m', '30m', '1h', '4h', '1d'
+    ]
 
-    # วนลูปเพื่อดึงข้อมูลและเทรนโมเดลสำหรับแต่ละคู่เงิน
+    # วนลูปเพื่อดึงข้อมูลและเทรนโมเดลสำหรับแต่ละคู่เงินและแต่ละ Timeframe
     for symbol in supported_symbols:
-        print(f"\n{'='*25} Processing {symbol} {'='*25}")
-        try:
-            # 1. ดึงข้อมูลดิบ
-            raw_df = get_forex_data(symbol, interval="1day", output_size=5000)
-            if raw_df is None:
-                continue
+        for timeframe in supported_timeframes:
+            print(f"\n{'='*25} Processing {symbol} ({timeframe}) {'='*25}")
+            try:
+                # 1. ดึงข้อมูลดิบตาม Timeframe ที่กำหนด
+                api_interval = map_timeframe_to_api(timeframe)
+                raw_df = get_forex_data(symbol, interval=api_interval, output_size=5000)
+                if raw_df is None:
+                    continue
 
-            # 2. สร้าง Features และ Labels
-            df = prepare_features_and_labels(raw_df)
-            if df is None:
-                continue
-            
-            # 3. เทรนโมเดล Random Forest
-            train_random_forest(df.copy(), symbol)
-            
-            # 4. เทรนโมเดล LSTM
-            train_lstm(df.copy(), symbol)
+                # 2. สร้าง Features และ Labels
+                df = prepare_features_and_labels(raw_df)
+                if df is None:
+                    continue
+                
+                # 3. เทรนโมเดล Random Forest
+                train_random_forest(df.copy(), symbol, timeframe)
+                
+                # 4. เทรนโมเดล LSTM
+                train_lstm(df.copy(), symbol, timeframe)
 
-        except Exception as e:
-            print(f"เกิดข้อผิดพลาดระหว่างประมวลผล {symbol}: {e}")
-            continue
+            except Exception as e:
+                print(f"เกิดข้อผิดพลาดระหว่างประมวลผล {symbol} ({timeframe}): {e}")
+                continue
 
 if __name__ == "__main__":
     # Create directories if they don't exist
-    if not os.path.exists('ai_model'):
-        os.makedirs('ai_model')
+    model_dir = os.path.join(os.path.dirname(__file__), 'models')
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
     
     main()

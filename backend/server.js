@@ -42,7 +42,7 @@ if (!JWT_SECRET) { // ADDED
 }
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001; // (แก้ไข) ใช้ Port จาก Environment Variable ของ Render
 
 // 2. ตั้งค่า Multer สำหรับการอัปโหลดไฟล์
 const storage = multer.diskStorage({
@@ -74,7 +74,7 @@ const newsCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 120 }); // 5 minu
 // --- (แก้ไข) ตั้งค่า CORS ให้ปลอดภัยสำหรับ Production ---
 // กำหนด URL ของ Frontend ที่จะอนุญาตให้เรียก API ได้
 const allowedOrigins = [
-    'https://m1-two-topaz.vercel.app', // URL ของ Frontend บน Vercel ที่คุณให้มา
+    'https://m1-two-topaz.vercel.app', // (สำคัญ) ตรวจสอบให้แน่ใจว่านี่คือ URL ที่ถูกต้องของ Vercel App ของคุณ
     'http://localhost:3000'           // URL สำหรับการพัฒนาบนเครื่อง (dev server)
 ];
 
