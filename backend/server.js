@@ -127,6 +127,9 @@ app.use('/api/support', supportRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Backtest Results
 const backtestRoutes = require('./services/backtestRoutes');
 app.use('/api/backtest', backtestRoutes);
+// (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
+const adminRoutes = require('./adminRoutes');
+app.use('/api/admin', adminRoutes);
 
 // Helper to check if a symbol is a supported forex pair
 // Helper to get point size (pip/point) for each symbol
@@ -853,11 +856,6 @@ app.get('/api/news', async (req, res) => {
         return res.status(500).json({ error: "Failed to fetch news.", details: "Could not connect to the news provider." });
     }
 });
-
-// =======================================================================
-// (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
-const adminRoutes = require('./adminRoutes');
-app.use('/api/admin', adminRoutes);
 
 // This middleware catches all errors passed via next(error).
 // It MUST be the last `app.use()` call before `app.listen()`.
