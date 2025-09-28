@@ -166,40 +166,14 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
                 throw new Error(`Not enough historical data (${closes.length} bars) for Python AI (needs ${python_sequence_length}).`);
             }
  
-            // (แก้ไข) คำนวณ Features ทั้งหมดใน Node.js ก่อนส่งไปให้ Python
-            const recentData = ohlcData.slice(-python_sequence_length);
-            const recentCloses = recentData.map(d => d.close);
-            const recentHighs = recentData.map(d => d.high);
-            const recentLows = recentData.map(d => d.low);
-
-            // คำนวณ Indicators
-            const rsiValues = RSI.calculate({ values: recentCloses, period: 14 });
-            const macdValues = MACD.calculate({ values: recentCloses, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9, SimpleMAOscillator: false, SimpleMASignal: false });
-            const bbandsValues = BollingerBands.calculate({ period: 20, values: recentCloses, stdDev: 2 });
-            const atrValues = ATR.calculate({ high: recentHighs, low: recentLows, close: recentCloses, period: 14 });
-            const stochValues = Stochastic.calculate({ high: recentHighs, low: recentLows, close: recentCloses, period: 14, signalPeriod: 3 });
-
-            // สร้าง object ของ feature ล่าสุดที่จะส่งไป
-            const lastFeatures = {
-                'RSI_14': rsiValues[rsiValues.length - 1],
-                'MACD_12_26_9': macdValues[macdValues.length - 1]?.MACD,
-                'MACDh_12_26_9': macdValues[macdValues.length - 1]?.histogram,
-                'MACDs_12_26_9': macdValues[macdValues.length - 1]?.signal,
-                'BBL_20_2.0': bbandsValues[bbandsValues.length - 1]?.lower,
-                'BBM_20_2.0': bbandsValues[bbandsValues.length - 1]?.middle,
-                'BBU_20_2.0': bbandsValues[bbandsValues.length - 1]?.upper,
-                // BBP and BBB are not standard in 'technicalindicators', we can skip or calculate manually if needed.
-                // For now, we assume the model can work without them or the python script can derive them.
-                // Let's send what we have. The python script will need to be simplified.
-                'ATRr_14': atrValues[atrValues.length - 1], // ATR is directly comparable to ATRr in pandas-ta
-                'STOCHk_14_3_3': stochValues[stochValues.length - 1]?.k,
-                'STOCHd_14_3_3': stochValues[stochValues.length - 1]?.d,
-            };
+            // (แก้ไข) กลับไปส่งข้อมูล OHLC ดิบให้ Python จัดการคำนวณ Feature เอง
+            // เพื่อให้แน่ใจว่า Feature ที่ใช้ในการทำนายจะตรงกับตอนที่เทรน 100%
+            const dataForPython = ohlcData
+                .slice(-python_sequence_length)
+                .map(d => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close }));
  
-            // We will need to adjust the python script to accept these features directly.
-            // For now, let's assume the python script is updated to receive a single JSON object of features.
-            const dataForPython = lastFeatures;
-            const pythonArgs = [JSON.stringify(dataForPython), modelFileName];
+            // (แก้ไข) ส่ง Symbol ไปเป็น Argument แรก และข้อมูล OHLC เป็น Argument ที่สอง
+            const pythonArgs = [normalizedSymbol, JSON.stringify(dataForPython), modelFileName];
 
  
             const pythonOutput = await new Promise((resolve, reject) => {
