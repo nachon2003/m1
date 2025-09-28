@@ -173,7 +173,6 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
                 .map(d => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close, volume: d.volume }));
  
             const pythonArgs = [normalizedSymbol, JSON.stringify(dataForPython), modelFileName];
-
  
             const pythonOutput = await new Promise((resolve, reject) => {
                 let output = '';

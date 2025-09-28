@@ -869,26 +869,6 @@ initializeDatabase().then(db => {
         setupWebSocketServer(); // เริ่ม WebSocket server หลังจาก HTTP server พร้อม
     });
 
-    // (ย้ายมา) Global Error Handler
-    // This middleware catches all errors passed via next(error).
-    // It MUST be the last `app.use()` call before `app.listen()`.
-    app.use((err, req, res, next) => {
-        // Log the full error for debugging purposes on the server
-        console.error(`[Global Error Handler] Path: ${req.path}`, err);
-    
-        // Default to 500 Internal Server Error if no status code is set on the error
-        const statusCode = err.statusCode || 500;
-        const message = err.message || 'An unexpected error occurred on the server.';
-    
-        // Send a structured error response to the client
-        res.status(statusCode).json({
-            success: false,
-            error: {
-                message: message,
-                details: err.details || null
-            }
-        });
-    });
 });
 
 // =======================================================================
@@ -1148,3 +1128,24 @@ async function checkOpenSignals() {
 
 // ตั้งเวลาให้ Worker ทำงานทุกๆ 5 นาที (300,000 ms)
 setInterval(checkOpenSignals, 300000);
+
+// (ย้ายมา) Global Error Handler
+// This middleware catches all errors passed via next(error).
+// It MUST be the last `app.use()` call before `app.listen()`.
+app.use((err, req, res, next) => {
+    // Log the full error for debugging purposes on the server
+    console.error(`[Global Error Handler] Path: ${req.path}`, err);
+
+    // Default to 500 Internal Server Error if no status code is set on the error
+    const statusCode = err.statusCode || 500;
+    const message = err.message || 'An unexpected error occurred on the server.';
+
+    // Send a structured error response to the client
+    res.status(statusCode).json({
+        success: false,
+        error: {
+            message: message,
+            details: err.details || null
+        }
+    });
+});

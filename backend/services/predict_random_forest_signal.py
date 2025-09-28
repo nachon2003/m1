@@ -77,12 +77,11 @@ def main():
         
         # ตรวจสอบว่ามีคอลัมน์ feature ครบหรือไม่
         if not all(feature in df_features.columns for feature in features_list):
-            # บางครั้ง pandas-ta อาจสร้างคอลัมน์ไม่ครบถ้าข้อมูลไม่พอ
+            # (แก้ไข) บางครั้ง pandas-ta อาจสร้างคอลัมน์ไม่ครบถ้าข้อมูลไม่พอ
             # เราจะเติมค่าที่ขาดไปด้วย 0 เพื่อให้โมเดลยังทำงานได้
             for feature in features_list:
                 if feature not in df_features.columns:
                     df_features[feature] = 0
-            # raise ValueError(f"Missing feature columns after calculation: {missing}")
 
         last_row_features = df_features.iloc[-1][features_list]
         last_row = last_row_features.values.reshape(1, -1)
@@ -103,12 +102,8 @@ def main():
         
         # คำนวณ Buyer Percentage (แก้ไขให้ปลอดภัยขึ้น)
         class_labels = model.classes_.tolist()
-        buy_prob = 0
-        sell_prob = 0
-        if 1 in class_labels:
-            buy_prob = probabilities[class_labels.index(1)]
-        if -1 in class_labels:
-            sell_prob = probabilities[class_labels.index(-1)]
+        buy_prob = probabilities[class_labels.index(1)] if 1 in class_labels else 0
+        sell_prob = probabilities[class_labels.index(-1)] if -1 in class_labels else 0
         buyer_percentage = (buy_prob / (buy_prob + sell_prob)) * 100 if (buy_prob + sell_prob) > 0 else 50
 
         # (ใหม่) วิเคราะห์ Trend และ Volume
