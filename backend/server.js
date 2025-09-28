@@ -847,15 +847,6 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-// (แก้ไข) Serve static files from the 'build' directory (the output of `npm run build`)
-// This is crucial for serving your React build files from the root of the project
-app.use(express.static(path.join(__dirname, '..', 'build')));
-
-// (แก้ไข) For any other requests that don't match an API route, serve the index.html file from the 'build' directory
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
-});
-
 // =======================================================================
 // Centralized Error Handling Middleware
 // =======================================================================
