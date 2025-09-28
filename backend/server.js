@@ -127,6 +127,9 @@ app.use('/api/support', supportRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Backtest Results
 const backtestRoutes = require('./services/backtestRoutes');
 app.use('/api/backtest', backtestRoutes);
+// (ใหม่) ลงทะเบียน Route สำหรับ Admin Dashboard
+const adminRoutes = require('./adminRoutes');
+app.use('/api/admin', adminRoutes);
 
 // Helper to check if a symbol is a supported forex pair
 // Helper to get point size (pip/point) for each symbol
