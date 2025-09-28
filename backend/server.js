@@ -72,23 +72,22 @@ const ohlcCache = new NodeCache({ stdTTL: 60 * 60, checkperiod: 120 }); // 1 hou
 const newsCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 120 }); // 5 minute TTL
 
 // --- (แก้ไข) ตั้งค่า CORS ให้ปลอดภัยสำหรับ Production ---
-// กำหนด URL ของ Frontend ที่จะอนุญาตให้เรียก API ได้
-const allowedOrigins = [
-    'https://m1-two-topaz.vercel.app', // (สำคัญ) ตรวจสอบให้แน่ใจว่านี่คือ URL ที่ถูกต้องของ Vercel App ของคุณ
-    'http://localhost:3000'           // URL สำหรับการพัฒนาบนเครื่อง (dev server)
-];
+// (แก้ไข) อ่าน URL ที่อนุญาตจาก Environment Variable เพื่อความยืดหยุ่น
+// ตัวอย่างค่าใน .env: ALLOWED_ORIGINS=http://localhost:3000,https://your-frontend-app.onrender.com
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // อนุญาตถ้า origin อยู่ใน allowedOrigins
-    // หรือถ้า request ไม่มี origin (เช่น การเรียกผ่าน Postman หรือ server-to-server)
-    if (allowedOrigins.includes(origin) || !origin) {
+    // ถ้าไม่ได้กำหนด allowedOrigins เลย (เช่นตอน dev) ให้ยอมรับทั้งหมด
+    // หรือถ้า origin ที่เรียกมาอยู่ใน list ที่อนุญาต
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin) || !origin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // อนุญาตให้ส่งข้อมูล credentials (เช่น Authorization header)
+  credentials: true,
 };
 
 app.use(cors(corsOptions)); // ใช้ cors middleware พร้อมกับ options ที่กำหนด
@@ -791,7 +790,7 @@ app.get('/api/fetch-and-save-ohlc-for-training', async (req, res) => {
 app.get('/api/news', async (req, res) => {
     const { query = 'forex', lang = 'en', country = 'us', max = 10 } = req.query;
 
-    if (!GNEWS_API_KEY || GNEWS_API_KEY === 'YOUR_GNEWS_API_KEY_HERE' || GNEWS_API_KEY === 'ec0cbcd2f1f5b26a60eb15028bf45b9e') {
+    if (!GNEWS_API_KEY || GNEWS_API_KEY === 'YOUR_GNEWS_API_KEY_HERE') {
         console.error("\x1b[31m%s\x1b[0m", "ERROR: GNews API Key is not configured. Please add GNEWS_API_KEY to your backend/.env file.");
         return res.status(500).json({ error: "GNews API Key is missing. Please configure it." });
     }
