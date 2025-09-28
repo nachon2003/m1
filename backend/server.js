@@ -117,9 +117,6 @@ app.use('/api/training', trainingRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Support System
 const supportRoutes = require('./supportRoutes');
 app.use('/api/support', supportRoutes);
-// (ใหม่) ลงทะเบียน Route สำหรับ Admin Dashboard
-const adminRoutes = require('./adminRoutes');
-app.use('/api/admin', adminRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Backtest Results
 const backtestRoutes = require('./services/backtestRoutes');
 app.use('/api/backtest', backtestRoutes);
@@ -850,9 +847,6 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-// =======================================================================
-// Centralized Error Handling Middleware
-// =======================================================================
 // This middleware catches all errors passed via next(error).
 // It MUST be the last `app.use()` call before `app.listen()`.
 app.use((err, req, res, next) => {
