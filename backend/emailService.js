@@ -11,14 +11,17 @@ const createTransporter = async () => {
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log('📧 Using Gmail SMTP for sending emails.');
         return nodemailer.createTransport({
-            service: 'gmail', // ใช้ service ของ Gmail โดยตรง
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
+            host: 'smtp.gmail.com', // (แก้ไข) ระบุ host โดยตรง
+            port: 587, // (แก้ไข) เปลี่ยนเป็นพอร์ต 587 สำหรับ STARTTLS
+            secure: false, // (แก้ไข) ตั้งเป็น false เพื่อให้ nodemailer ใช้ STARTTLS โดยอัตโนมัติ
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS, // ควรเป็น App Password ของ Google
             },
+            // (ใหม่) เพิ่มการตั้งค่า Timeout เพื่อป้องกันการค้าง
+            connectionTimeout: 10000, // 10 วินาที
+            greetingTimeout: 10000, // 10 วินาที
+            socketTimeout: 10000, // 10 วินาที
         });
     } else {
         // ถ้าไม่มีการตั้งค่า Gmail ให้ใช้ Ethereal สำหรับทดสอบ
