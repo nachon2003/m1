@@ -9,12 +9,13 @@ const {
     getPipValue // (ใหม่) Import getPipValue จาก dataHelpers
 } = require('./dataHelpers');
 
-// (แก้ไข) ทำให้การกำหนด Python path ฉลาดขึ้น
+// (แก้ไข) ทำให้การกำหนด Python path ฉลาดขึ้นและป้องกันข้อผิดพลาด
 // - ถ้าอยู่ใน Production (เช่น Render) ให้ใช้ 'python3' เสมอ
 // - ถ้าอยู่ใน Development ให้ใช้ค่าจาก .env หรือ default เป็น 'python3'
-const PYTHON_EXECUTABLE = process.env.NODE_ENV === 'production'
-    ? 'python3'
-    : process.env.PYTHON_EXECUTABLE || 'python3';
+const PYTHON_EXECUTABLE =
+  process.env.NODE_ENV === "production"
+    ? "python3"
+    : process.env.PYTHON_EXECUTABLE || "python3";
 
 const getDecimalPlaces = (symbol) => {
     const normalized = symbol.toUpperCase();

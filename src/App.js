@@ -78,9 +78,9 @@ const TradingPlatform = ({
             </div>
             <RealtimePriceTicker symbols={allSymbols} livePrices={livePrices} error={livePricesError} isConnected={isPriceWsConnected} />
             {/* StrengthChart now uses marketAnalysis for the selected symbol as its data source */}
-            <StrengthChart
-                symbols={allSymbols}
-                signalsData={technicalAnalysis} // (แก้ไข) เปลี่ยนแหล่งข้อมูลเป็น technicalAnalysis (ซึ่งก็คือ allMarketAnalyses)
+            <StrengthChart 
+                symbols={allSymbols} 
+                signalsData={allMarketAnalyses} // (แก้ไข) เปลี่ยนแหล่งข้อมูลเป็น allMarketAnalyses โดยตรง
             />
         </aside>
         <main className="App-main">
@@ -514,7 +514,7 @@ function App() {
                                 livePricesError={livePricesError}
                                 isPriceWsConnected={isPriceWsConnected}
                                 marketAnalysis={marketAnalysis}
-                                technicalAnalysis={allMarketAnalyses} // (แก้ไข) ส่ง allMarketAnalyses ไปแทน
+                                technicalAnalysis={technicalAnalysis} // (แก้ไข) ส่ง technicalAnalysis ที่ถูกต้อง
                                 tradeSignal={tradeSignal}
                                 isAnalyzing={isAnalyzing}
                                 isRequestingSignal={isRequestingSignal}
