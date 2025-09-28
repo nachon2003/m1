@@ -18,10 +18,11 @@ const createTransporter = async () => {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS, // ควรเป็น App Password ของ Google
             },
-            // (ใหม่) เพิ่มการตั้งค่า Timeout เพื่อป้องกันการค้าง
-            connectionTimeout: 10000, // 10 วินาที
-            greetingTimeout: 10000, // 10 วินาที
-            socketTimeout: 10000, // 10 วินาที
+            requireTLS: true, // Force STARTTLS
+            // (ปรับปรุง) เพิ่มการตั้งค่า Timeout เพื่อป้องกันการค้าง
+            connectionTimeout: 15000, // 15 วินาที
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
         });
     } else {
         // ถ้าไม่มีการตั้งค่า Gmail ให้ใช้ Ethereal สำหรับทดสอบ
