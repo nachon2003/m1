@@ -79,9 +79,14 @@ console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // ถ้าไม่ได้กำหนด allowedOrigins เลย (เช่นตอน dev) ให้ยอมรับทั้งหมด
-    // หรือถ้า origin ที่เรียกมาอยู่ใน list ที่อนุญาต
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin) || !origin) {
+    // (แก้ไข) เพิ่มความยืดหยุ่นสำหรับ Render.com
+    // อนุญาตถ้า origin มาจาก onrender.com, อยู่ใน list ที่กำหนด, หรือไม่มี origin (เช่น Postman)
+    const isAllowed = allowedOrigins.length === 0 || 
+                      allowedOrigins.includes(origin) || 
+                      !origin ||
+                      (origin && origin.endsWith('.onrender.com'));
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
