@@ -9,8 +9,12 @@ const {
     getPipValue // (ใหม่) Import getPipValue จาก dataHelpers
 } = require('./dataHelpers');
 
-// (แก้ไข) กำหนดค่าเริ่มต้นเป็น 'python3' ซึ่งเป็นค่ามาตรฐานสำหรับ Render (Linux)
-const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || 'python3';
+// (แก้ไข) ทำให้การกำหนด Python path ฉลาดขึ้น
+// - ถ้าอยู่ใน Production (เช่น Render) ให้ใช้ 'python3' เสมอ
+// - ถ้าอยู่ใน Development ให้ใช้ค่าจาก .env หรือ default เป็น 'python3'
+const PYTHON_EXECUTABLE = process.env.NODE_ENV === 'production'
+    ? 'python3'
+    : process.env.PYTHON_EXECUTABLE || 'python3';
 
 const getDecimalPlaces = (symbol) => {
     const normalized = symbol.toUpperCase();
