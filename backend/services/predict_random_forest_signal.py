@@ -66,6 +66,11 @@ def main():
 
         df = pd.DataFrame(json.loads(ohlc_json))
         
+        # Ensure 'time' column is parsed correctly if it exists
+        if 'time' in df.columns:
+            df['time'] = pd.to_datetime(df['time'])
+            df.set_index('time', inplace=True)
+
         # (ใหม่) ตรวจสอบว่ามีคอลัมน์ volume หรือไม่ ถ้าไม่มีให้สร้างขึ้นมาเป็น 0
         if 'volume' not in df.columns:
             df['volume'] = 0
@@ -92,6 +97,12 @@ def main():
             'ATRr_14', 
             'STOCHk_14_3_3', 'STOCHd_14_3_3'
         ]
+
+        # Handle cases where pandas-ta might not create all columns due to insufficient data
+        for col in feature_cols:
+            if col not in df_features.columns:
+                df_features[col] = 0 # Fill missing features with 0
+
         current_features = df_features.iloc[-1:][feature_cols]
 
         # 5. ทำนายสัญญาณ
@@ -100,7 +111,7 @@ def main():
         signal = signal_map.get(prediction, 'HOLD')
 
         # 6. วิเคราะห์ Trend
-        trend = analyze_trend(df_features)
+        trend = analyze_trend(df_features) # ใช้ df_features ที่มี MAs แล้ว
 
         # (ใหม่) 7. วิเคราะห์ Volume
         volume_status = analyze_volume(df_features)
@@ -108,7 +119,7 @@ def main():
         # (ใหม่) 8. คำนวณ Buyer Percentage จาก RSI
         # ใช้ค่า RSI ล่าสุดเป็นตัวแทนแรงซื้อ (0-100)
         buyer_percentage = round(df_features.iloc[-1]['RSI_14']) if 'RSI_14' in df_features.columns else 50
-
+        
         # 7. สร้างผลลัพธ์เพื่อส่งกลับ
         result = {
             "signal": signal,
