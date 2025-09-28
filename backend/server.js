@@ -969,16 +969,21 @@ const broadcastLivePrices = async () => {
 // if the API call takes longer than the interval.
 const scheduleBroadcast = () => {
     // (แก้ไข) ปรับความถี่ในการเรียกซ้ำเป็นทุกๆ 8 วินาที (8,000 ms) ตามที่ผู้ใช้ต้องการ
+    // (แก้ไข) ปรับลดลงเหลือ 45 วินาที เพื่อป้องกัน connection timeout บน Render
     setTimeout(async () => {
         await broadcastLivePrices();
         scheduleBroadcast(); // Schedule the next broadcast
-    }, 60000); 
+    }, 45000); 
 };
 scheduleBroadcast(); // Start the broadcast loop
 
 // 5. จัดการเมื่อมี client ใหม่เชื่อมต่อเข้ามา
 wss.on('connection', ws => {
     console.log('[WSS] A client connected.');
+
+    // (เพิ่ม) ตั้งค่า isAlive สำหรับการทำ Ping/Pong
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
 
     // (ใหม่) จัดการเมื่อได้รับข้อความจาก client
     ws.on('message', (message) => {
@@ -1005,6 +1010,23 @@ wss.on('connection', ws => {
         console.log(`[WSS] Client disconnected (userId: ${ws.userId || 'unauthenticated'})`);
     });
 });
+
+    // (เพิ่ม) เพิ่มส่วนสำหรับ Ping client ทุกๆ 30 วินาทีเพื่อรักษาการเชื่อมต่อ
+    const pingInterval = setInterval(() => {
+        wss.clients.forEach(ws => {
+            if (ws.isAlive === false) {
+                console.log('[WSS] Terminating dead connection.');
+                return ws.terminate();
+            }
+
+            ws.isAlive = false;
+            ws.ping(() => {}); // ส่ง Ping ไปยัง client
+        });
+    }, 30000);
+
+    wss.on('close', () => {
+        clearInterval(pingInterval);
+    });
 }
 
 // =======================================================================
