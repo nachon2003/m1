@@ -170,8 +170,9 @@ function App() {
             return;
         }
 
-        const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:3001';
-        const ws = new WebSocket(wsUrl);
+        const websocketUrl = process.env.REACT_APP_WSS_URL || 'ws://localhost:3001';
+        const ws = new WebSocket(websocketUrl);
+
 
         ws.onopen = () => {
             console.log('WebSocket Connected for Live Prices');
