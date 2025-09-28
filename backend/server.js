@@ -847,14 +847,13 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-// Serve static files from the 'dist' directory (the output of `npm run build`)
-// This is crucial for serving your React build files
-app.use(express.static(path.join(__dirname, '..', 'dist')));
+// (แก้ไข) Serve static files from the 'build' directory (the output of `npm run build`)
+// This is crucial for serving your React build files from the root of the project
+app.use(express.static(path.join(__dirname, '..', 'build')));
 
-// For any other requests that don't match a static file, serve the index.html file from the 'dist' directory
-// This allows client-side routing to work
+// (แก้ไข) For any other requests that don't match an API route, serve the index.html file from the 'build' directory
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
 });
 
 // =======================================================================
