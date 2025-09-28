@@ -197,8 +197,11 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             const result = JSON.parse(pythonOutput);
             if (result.error) throw new Error(`AI model script returned an error: ${result.error}`);
  
-            // นำผลลัพธ์จาก Python มาใส่ใน object ของเรา
-            Object.assign(aiSignalData, result); // result จะมี signal, trend, volume, buyer_percentage, confidence
+            // (แก้ไข) นำผลลัพธ์จาก Python มาใส่ใน object ของเราอย่างชัดเจน
+            aiSignalData.signal = result.signal || 'HOLD';
+            aiSignalData.trend = result.trend || 'N/A';
+            aiSignalData.buyer_percentage = result.buyer_percentage !== undefined ? result.buyer_percentage : 50;
+            aiSignalData.confidence = result.confidence || 'N/A';
             console.log(`Python ${modelType.toUpperCase()} Model Output:`, result);
  
         } catch (aiError) {
@@ -285,9 +288,9 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
                 const lastAtr = atrResult[atrResult.length - 1];
                 const avgAtr = SMA.calculate({ period: 20, values: atrResult }).pop();
                 if (lastAtr > avgAtr * 1.2) {
-                    aiSignalData.volume = 'High'; // Volatility สูง
+                    aiSignalData.volatility = 'High'; // (แก้ไข) เปลี่ยนชื่อเป็น volatility
                 } else {
-                    aiSignalData.volume = 'Normal'; // Volatility ปกติ
+                    aiSignalData.volatility = 'Normal'; // (แก้ไข) เปลี่ยนชื่อเป็น volatility
                 }
             }
         } catch (e) {
