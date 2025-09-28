@@ -891,8 +891,9 @@ initializeDatabase().then(db => {
 let wss;
 
 function setupWebSocketServer() {
-    wss = new WebSocket.Server({ server });
-const broadcastLivePrices = async () => {
+    wss = new WebSocket.Server({ server }); // สร้าง WebSocket Server และผูกกับ HTTP server
+
+    const broadcastLivePrices = async () => {
     // ถ้าไม่มี client เชื่อมต่ออยู่ ก็ไม่ต้องทำอะไร
     if (wss.clients.size === 0) {
         return;
@@ -964,54 +965,50 @@ const broadcastLivePrices = async () => {
         });
     }
 };
-
-// 4. Use a recursive setTimeout loop instead of setInterval for safer async operations.
-// This ensures that one broadcast completes before the next one is scheduled, preventing overlaps
-// if the API call takes longer than the interval.
-const scheduleBroadcast = () => {
-    // (แก้ไข) ปรับความถี่ในการเรียกซ้ำเป็นทุกๆ 8 วินาที (8,000 ms) ตามที่ผู้ใช้ต้องการ
-    // (แก้ไข) ปรับลดลงเหลือ 45 วินาที เพื่อป้องกัน connection timeout บน Render
-    setTimeout(async () => {
-        await broadcastLivePrices();
-        scheduleBroadcast(); // Schedule the next broadcast
-    }, 45000); 
-};
-scheduleBroadcast(); // Start the broadcast loop
-
-// 5. จัดการเมื่อมี client ใหม่เชื่อมต่อเข้ามา
-wss.on('connection', ws => {
-    console.log('[WSS] A client connected.');
-
-    // (เพิ่ม) ตั้งค่า isAlive สำหรับการทำ Ping/Pong
-    ws.isAlive = true;
-    ws.on('pong', () => { ws.isAlive = true; });
-
-    // (ใหม่) จัดการเมื่อได้รับข้อความจาก client
-    ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
-            // จัดการข้อความยืนยันตัวตน
-            if (data.type === 'AUTH' && data.token) {
-                jwt.verify(data.token, JWT_SECRET, (err, user) => {
-                    if (err) {
-                        console.error('[WSS] Auth failed:', err.message);
-                        ws.terminate(); // ปิดการเชื่อมต่อถ้า token ไม่ถูกต้อง
-                    } else {
-                        ws.userId = user.id; // ผูก userId เข้ากับ WebSocket connection
-                        console.log(`[WSS] Client authenticated for userId: ${ws.userId}`);
-                    }
-                });
+    
+    // 4. Use a recursive setTimeout loop instead of setInterval for safer async operations.
+    const scheduleBroadcast = () => {
+        setTimeout(async () => {
+            await broadcastLivePrices();
+            scheduleBroadcast(); // Schedule the next broadcast
+        }, 45000); 
+    };
+    scheduleBroadcast(); // Start the broadcast loop
+    
+    // 5. จัดการเมื่อมี client ใหม่เชื่อมต่อเข้ามา
+    wss.on('connection', ws => {
+        console.log('[WSS] A client connected.');
+    
+        // (เพิ่ม) ตั้งค่า isAlive สำหรับการทำ Ping/Pong
+        ws.isAlive = true;
+        ws.on('pong', () => { ws.isAlive = true; });
+    
+        // (ใหม่) จัดการเมื่อได้รับข้อความจาก client
+        ws.on('message', (message) => {
+            try {
+                const data = JSON.parse(message);
+                // จัดการข้อความยืนยันตัวตน
+                if (data.type === 'AUTH' && data.token) {
+                    jwt.verify(data.token, JWT_SECRET, (err, user) => {
+                        if (err) {
+                            console.error('[WSS] Auth failed:', err.message);
+                            ws.terminate(); // ปิดการเชื่อมต่อถ้า token ไม่ถูกต้อง
+                        } else {
+                            ws.userId = user.id; // ผูก userId เข้ากับ WebSocket connection
+                            console.log(`[WSS] Client authenticated for userId: ${ws.userId}`);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('[WSS] Failed to parse message:', message, e);
             }
-        } catch (e) {
-            console.error('[WSS] Failed to parse message:', message, e);
-        }
+        });
+    
+        ws.on('close', () => {
+            console.log(`[WSS] Client disconnected (userId: ${ws.userId || 'unauthenticated'})`);
+        });
     });
-
-    ws.on('close', () => {
-        console.log(`[WSS] Client disconnected (userId: ${ws.userId || 'unauthenticated'})`);
-    });
-});
-
+    
     // (เพิ่ม) เพิ่มส่วนสำหรับ Ping client ทุกๆ 30 วินาทีเพื่อรักษาการเชื่อมต่อ
     const pingInterval = setInterval(() => {
         wss.clients.forEach(ws => {
@@ -1019,7 +1016,7 @@ wss.on('connection', ws => {
                 console.log('[WSS] Terminating dead connection.');
                 return ws.terminate();
             }
-
+    
             ws.isAlive = false;
             ws.ping(() => {}); // ส่ง Ping ไปยัง client
         });
@@ -1028,7 +1025,7 @@ wss.on('connection', ws => {
     wss.on('close', () => {
         clearInterval(pingInterval);
     });
-}
+} // <-- สิ้นสุดฟังก์ชัน setupWebSocketServer() ที่นี่
 
 // =======================================================================
 // (ใหม่) Background Worker สำหรับตรวจสอบและปิด Trade
