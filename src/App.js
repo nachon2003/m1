@@ -57,6 +57,7 @@ const TradingPlatform = ({
     isRequestingSignal,
     onRequestNewSignal,
     onRequestAutoSignal, // (ใหม่) รับฟังก์ชัน auto signal
+    allMarketAnalyses, // (เพิ่ม) รับ allMarketAnalyses เข้ามาเป็น prop
     user
 }) => (
     <div className="app-container">
@@ -519,6 +520,7 @@ function App() {
                                 isAnalyzing={isAnalyzing}
                                 isRequestingSignal={isRequestingSignal}
                                 onRequestNewSignal={handleRequestNewSignal}
+                                allMarketAnalyses={allMarketAnalyses} // (เพิ่ม) ส่ง allMarketAnalyses ไปเป็น prop
                                 onRequestAutoSignal={handleRequestAutoSignal} // (ใหม่) ส่งฟังก์ชันใหม่
                             />
                         </div>
