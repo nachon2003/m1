@@ -39,88 +39,90 @@ def analyze_trend(df):
     else:
         return 'Sideways'
 
+def analyze_volume(df):
+    """วิเคราะห์ Volume โดยเปรียบเทียบกับค่าเฉลี่ย"""
+    if df.empty or 'volume' not in df.columns or df['volume'].sum() == 0:
+        return 'N/A'
+    
+    last_row = df.iloc[-1]
+    current_volume = last_row['volume']
+    avg_volume = df['volume'].rolling(window=20).mean().iloc[-1]
+
+    if current_volume > avg_volume * 1.5:
+        return 'High'
+    elif current_volume < avg_volume * 0.7:
+        return 'Low'
+    else:
+        return 'Normal'
+
+
+
 def main():
     try:
-        # 1. อ่าน Arguments จาก Node.js
+        # 1. รับข้อมูลจาก Node.js
         symbol = sys.argv[1]
         ohlc_json = sys.argv[2]
         model_filename = sys.argv[3]
 
-        # 2. สร้าง DataFrame จากข้อมูล OHLC ที่ได้รับ
-        ohlc_data = json.loads(ohlc_json)
-        df = pd.DataFrame(ohlc_data)
+        df = pd.DataFrame(json.loads(ohlc_json))
         
         # (ใหม่) ตรวจสอบว่ามีคอลัมน์ volume หรือไม่ ถ้าไม่มีให้สร้างขึ้นมาเป็น 0
         if 'volume' not in df.columns:
             df['volume'] = 0
 
-        # ตรวจสอบว่ามีข้อมูลหรือไม่
-        if df.empty:
-            raise ValueError("Received empty OHLC data.")
-
-        # แปลง 'time' เป็น index
-        df['time'] = pd.to_datetime(df['time'])
-        df.set_index('time', inplace=True)
-
-        # 3. คำนวณ Features
+        # 2. คำนวณ Features
         df_features = calculate_features(df.copy())
 
         if df_features.empty:
             raise ValueError("Not enough data to calculate features.")
 
-        # 4. เตรียมข้อมูลล่าสุดสำหรับทำนาย
-        features_list = [
-            'RSI_14', 'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
-            'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
-            'ATRr_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3'
-        ]
-        
-        # ตรวจสอบว่ามีคอลัมน์ feature ครบหรือไม่
-        if not all(feature in df_features.columns for feature in features_list):
-            # (แก้ไข) บางครั้ง pandas-ta อาจสร้างคอลัมน์ไม่ครบถ้าข้อมูลไม่พอ
-            # เราจะเติมค่าที่ขาดไปด้วย 0 เพื่อให้โมเดลยังทำงานได้
-            for feature in features_list:
-                if feature not in df_features.columns:
-                    df_features[feature] = 0
-
-        last_row_features = df_features.iloc[-1][features_list]
-        last_row = last_row_features.values.reshape(1, -1)
-        # 5. โหลดโมเดล
+        # 3. โหลดโมเดล
         model_path = os.path.join(os.path.dirname(__file__), 'models', model_filename)
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model file not found at {model_path}")
         
         model = joblib.load(model_path)
 
-        # 6. ทำนายผล
-        prediction = model.predict(last_row)[0]
-        probabilities = model.predict_proba(last_row)[0]
+        # 4. เตรียมข้อมูลสำหรับทำนาย
+        # (แก้ไข) ทำให้รายการ Feature ตรงกับที่ใช้ใน train_model.py
+        feature_cols = [
+            'RSI_14', 
+            'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9',
+            'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+            'ATRr_14', 
+            'STOCHk_14_3_3', 'STOCHd_14_3_3'
+        ]
+        current_features = df_features.iloc[-1:][feature_cols]
 
-        # แปลงผลลัพธ์
+        # 5. ทำนายสัญญาณ
+        prediction = model.predict(current_features)[0]
         signal_map = {1: 'BUY', -1: 'SELL', 0: 'HOLD'}
-        signal = signal_map.get(int(prediction), 'HOLD')
-        
-        # คำนวณ Buyer Percentage (แก้ไขให้ปลอดภัยขึ้น)
-        class_labels = model.classes_.tolist()
-        buy_prob = probabilities[class_labels.index(1)] if 1 in class_labels else 0
-        sell_prob = probabilities[class_labels.index(-1)] if -1 in class_labels else 0
-        buyer_percentage = (buy_prob / (buy_prob + sell_prob)) * 100 if (buy_prob + sell_prob) > 0 else 50
+        signal = signal_map.get(prediction, 'HOLD')
 
-        # (ใหม่) วิเคราะห์ Trend และ Volume
+        # 6. วิเคราะห์ Trend
         trend = analyze_trend(df_features)
-        # volume_status = analyze_volume(df_features) # Volume analysis can be added back if needed
 
-        # 7. สร้างผลลัพธ์และ Print เป็น JSON
+        # (ใหม่) 7. วิเคราะห์ Volume
+        volume_status = analyze_volume(df_features)
+
+        # (ใหม่) 8. คำนวณ Buyer Percentage จาก RSI
+        # ใช้ค่า RSI ล่าสุดเป็นตัวแทนแรงซื้อ (0-100)
+        buyer_percentage = round(df_features.iloc[-1]['RSI_14']) if 'RSI_14' in df_features.columns else 50
+
+        # 7. สร้างผลลัพธ์เพื่อส่งกลับ
         result = {
             "signal": signal,
             "trend": trend,
-            # "volume": volume_status, # Can be enabled later
-            "buyer_percentage": round(buyer_percentage, 2),
+            "volume": volume_status,
+            "buyer_percentage": buyer_percentage,
+            "reasoning": f"AI model predicted {signal} based on current market conditions. Market trend is {trend} and volume is {volume_status}."
+            # สามารถเพิ่มค่าอื่นๆ ได้ในอนาคต เช่น confidence
         }
         print(json.dumps(result))
 
     except Exception as e:
-        print(json.dumps({"error": str(e)}))
+        error_result = {"error": str(e)}
+        print(json.dumps(error_result))
         sys.exit(1)
 
 if __name__ == "__main__":

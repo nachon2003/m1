@@ -127,9 +127,6 @@ app.use('/api/support', supportRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Backtest Results
 const backtestRoutes = require('./services/backtestRoutes');
 app.use('/api/backtest', backtestRoutes);
-// (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
-const adminRoutes = require('./adminRoutes');
-app.use('/api/admin', adminRoutes);
 
 // Helper to check if a symbol is a supported forex pair
 // Helper to get point size (pip/point) for each symbol
@@ -857,6 +854,31 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
+// =======================================================================
+// (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
+const adminRoutes = require('./adminRoutes');
+app.use('/api/admin', adminRoutes);
+
+// This middleware catches all errors passed via next(error).
+// It MUST be the last `app.use()` call before `app.listen()`.
+app.use((err, req, res, next) => {
+    // Log the full error for debugging purposes on the server
+    console.error(`[Global Error Handler] Path: ${req.path}`, err);
+
+    // Default to 500 Internal Server Error if no status code is set on the error
+    const statusCode = err.statusCode || 500;
+    const message = err.message || 'An unexpected error occurred on the server.';
+
+    // Send a structured error response to the client
+    res.status(statusCode).json({
+        success: false,
+        error: {
+            message: message,
+            details: err.details || null
+        }
+    });
+});
+
 // 2. เปลี่ยน app.listen เป็น server.listen และย้ายไปอยู่ใน async function
 // เพื่อให้เราสามารถเชื่อมต่อฐานข้อมูลให้เสร็จก่อนเริ่ม server
 let server;
@@ -868,7 +890,6 @@ initializeDatabase().then(db => {
         console.log(`Backend server listening at http://localhost:${PORT}`);
         setupWebSocketServer(); // เริ่ม WebSocket server หลังจาก HTTP server พร้อม
     });
-
 });
 
 // =======================================================================
@@ -1128,24 +1149,3 @@ async function checkOpenSignals() {
 
 // ตั้งเวลาให้ Worker ทำงานทุกๆ 5 นาที (300,000 ms)
 setInterval(checkOpenSignals, 300000);
-
-// (ย้ายมา) Global Error Handler
-// This middleware catches all errors passed via next(error).
-// It MUST be the last `app.use()` call before `app.listen()`.
-app.use((err, req, res, next) => {
-    // Log the full error for debugging purposes on the server
-    console.error(`[Global Error Handler] Path: ${req.path}`, err);
-
-    // Default to 500 Internal Server Error if no status code is set on the error
-    const statusCode = err.statusCode || 500;
-    const message = err.message || 'An unexpected error occurred on the server.';
-
-    // Send a structured error response to the client
-    res.status(statusCode).json({
-        success: false,
-        error: {
-            message: message,
-            details: err.details || null
-        }
-    });
-});
