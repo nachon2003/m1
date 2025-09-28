@@ -166,7 +166,7 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
                 throw new Error(`Not enough historical data (${closes.length} bars) for Python AI (needs ${python_sequence_length}).`);
             }
  
-            // (แก้ไข) ส่งข้อมูล OHLC ดิบให้ Python จัดการคำนวณ Feature เอง
+            // (แก้ไข) ส่งข้อมูล OHLC ดิบ (รวม volume) ให้ Python จัดการคำนวณ Feature เอง
             // เพื่อให้แน่ใจว่า Feature ที่ใช้ในการทำนายจะตรงกับตอนที่เทรน
             const dataForPython = ohlcData
                 .slice(-python_sequence_length)

@@ -7,13 +7,37 @@ import os
 import pandas_ta as ta
 
 def calculate_features(df):
-    """Calculates all necessary technical indicators using pandas-ta."""
+    """คำนวณ Technical Indicators และ Features ที่จำเป็น"""
     df.ta.rsi(length=14, append=True)
     df.ta.macd(fast=12, slow=26, signal=9, append=True)
     df.ta.bbands(length=20, std=2, append=True)
     df.ta.atr(length=14, append=True)
     df.ta.stoch(k=14, d=3, smooth_k=3, append=True)
+    
+    # (ใหม่) คำนวณ MAs สำหรับวิเคราะห์ Trend
+    df['ma_9'] = ta.sma(df['close'], length=9)
+    df['ma_18'] = ta.sma(df['close'], length=18)
+    df['ma_50'] = ta.sma(df['close'], length=50)
+
+    df.dropna(inplace=True)
     return df
+
+def analyze_trend(df):
+    """วิเคราะห์แนวโน้มตลาดจากเส้นค่าเฉลี่ย"""
+    if df.empty or 'ma_9' not in df.columns or 'ma_18' not in df.columns or 'ma_50' not in df.columns:
+        return 'N/A'
+        
+    last_row = df.iloc[-1]
+    ma9 = last_row['ma_9']
+    ma18 = last_row['ma_18']
+    ma50 = last_row['ma_50']
+
+    if ma9 > ma18 and ma18 > ma50:
+        return 'Uptrend'
+    elif ma9 < ma18 and ma18 < ma50:
+        return 'Downtrend'
+    else:
+        return 'Sideways'
 
 def main():
     try:
@@ -25,6 +49,11 @@ def main():
         # 2. สร้าง DataFrame จากข้อมูล OHLC ที่ได้รับ
         ohlc_data = json.loads(ohlc_json)
         df = pd.DataFrame(ohlc_data)
+        
+        # (ใหม่) ตรวจสอบว่ามีคอลัมน์ volume หรือไม่ ถ้าไม่มีให้สร้างขึ้นมาเป็น 0
+        if 'volume' not in df.columns:
+            df['volume'] = 0
+
         # ตรวจสอบว่ามีข้อมูลหรือไม่
         if df.empty:
             raise ValueError("Received empty OHLC data.")
@@ -34,7 +63,10 @@ def main():
         df.set_index('time', inplace=True)
 
         # 3. คำนวณ Features
-        df = calculate_features(df)
+        df_features = calculate_features(df.copy())
+
+        if df_features.empty:
+            raise ValueError("Not enough data to calculate features.")
 
         # 4. เตรียมข้อมูลล่าสุดสำหรับทำนาย
         features_list = [
@@ -44,15 +76,15 @@ def main():
         ]
         
         # ตรวจสอบว่ามีคอลัมน์ feature ครบหรือไม่
-        if not all(feature in df.columns for feature in features_list):
+        if not all(feature in df_features.columns for feature in features_list):
             # บางครั้ง pandas-ta อาจสร้างคอลัมน์ไม่ครบถ้าข้อมูลไม่พอ
             # เราจะเติมค่าที่ขาดไปด้วย 0 เพื่อให้โมเดลยังทำงานได้
             for feature in features_list:
-                if feature not in df.columns:
-                    df[feature] = 0
+                if feature not in df_features.columns:
+                    df_features[feature] = 0
             # raise ValueError(f"Missing feature columns after calculation: {missing}")
 
-        last_row_features = df.iloc[-1][features_list]
+        last_row_features = df_features.iloc[-1][features_list]
         last_row = last_row_features.values.reshape(1, -1)
         # 5. โหลดโมเดล
         model_path = os.path.join(os.path.dirname(__file__), 'models', model_filename)
@@ -79,15 +111,22 @@ def main():
             sell_prob = probabilities[class_labels.index(-1)]
         buyer_percentage = (buy_prob / (buy_prob + sell_prob)) * 100 if (buy_prob + sell_prob) > 0 else 50
 
+        # (ใหม่) วิเคราะห์ Trend และ Volume
+        trend = analyze_trend(df_features)
+        # volume_status = analyze_volume(df_features) # Volume analysis can be added back if needed
+
         # 7. สร้างผลลัพธ์และ Print เป็น JSON
         result = {
             "signal": signal,
+            "trend": trend,
+            # "volume": volume_status, # Can be enabled later
             "buyer_percentage": round(buyer_percentage, 2),
         }
         print(json.dumps(result))
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
