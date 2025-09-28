@@ -78,7 +78,10 @@ const TradingPlatform = ({
             </div>
             <RealtimePriceTicker symbols={allSymbols} livePrices={livePrices} error={livePricesError} isConnected={isPriceWsConnected} />
             {/* StrengthChart now uses marketAnalysis for the selected symbol as its data source */}
-            <StrengthChart symbols={allSymbols} signalsData={marketAnalysis ? { [marketAnalysis.symbol]: marketAnalysis } : {}} />
+            <StrengthChart
+                symbols={allSymbols}
+                signalsData={technicalAnalysis} // (แก้ไข) เปลี่ยนแหล่งข้อมูลเป็น technicalAnalysis (ซึ่งก็คือ allMarketAnalyses)
+            />
         </aside>
         <main className="App-main">
             <div className="selector-container timeframe-selector">
@@ -132,6 +135,7 @@ function App() {
     const [isAnalyzing, setIsAnalyzing] = useState(false); // Loading state for the main button
     const [lastAnalysisTime, setLastAnalysisTime] = useState(null); // NEW: State for last update time
     const [isRequestingSignal, setIsRequestingSignal] = useState(false); // Loading state for BUY/SELL buttons
+    const [allMarketAnalyses, setAllMarketAnalyses] = useState({}); // (ใหม่) State สำหรับเก็บผลวิเคราะห์ของทุกคู่เงิน
 
     // --- Modal and Auth State ---
     const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
@@ -276,6 +280,11 @@ function App() {
 
             setMarketAnalysis(aiData);
             setTechnicalAnalysis(techData);
+            // (ใหม่) อัปเดต State ที่เก็บผลวิเคราะห์ของทุกคู่เงิน
+            setAllMarketAnalyses(prevAnalyses => ({
+                ...prevAnalyses,
+                [selectedSymbol]: aiData
+            }));
             setLastAnalysisTime(new Date()); // NEW: Set the current time on successful analysis
         } catch (err) {
             setError(err.message);
@@ -505,7 +514,7 @@ function App() {
                                 livePricesError={livePricesError}
                                 isPriceWsConnected={isPriceWsConnected}
                                 marketAnalysis={marketAnalysis}
-                                technicalAnalysis={technicalAnalysis}
+                                technicalAnalysis={allMarketAnalyses} // (แก้ไข) ส่ง allMarketAnalyses ไปแทน
                                 tradeSignal={tradeSignal}
                                 isAnalyzing={isAnalyzing}
                                 isRequestingSignal={isRequestingSignal}
