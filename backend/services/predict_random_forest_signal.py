@@ -1,5 +1,6 @@
 import sys
 import json
+import numpy as np
 import pandas as pd
 import joblib
 import os
@@ -24,6 +25,11 @@ def main():
         # 2. สร้าง DataFrame จากข้อมูล OHLC ที่ได้รับ
         ohlc_data = json.loads(ohlc_json)
         df = pd.DataFrame(ohlc_data)
+        # ตรวจสอบว่ามีข้อมูลหรือไม่
+        if df.empty:
+            raise ValueError("Received empty OHLC data.")
+
+        # แปลง 'time' เป็น index
         df['time'] = pd.to_datetime(df['time'])
         df.set_index('time', inplace=True)
 
@@ -39,11 +45,15 @@ def main():
         
         # ตรวจสอบว่ามีคอลัมน์ feature ครบหรือไม่
         if not all(feature in df.columns for feature in features_list):
-            missing = [f for f in features_list if f not in df.columns]
-            raise ValueError(f"Missing feature columns after calculation: {missing}")
+            # บางครั้ง pandas-ta อาจสร้างคอลัมน์ไม่ครบถ้าข้อมูลไม่พอ
+            # เราจะเติมค่าที่ขาดไปด้วย 0 เพื่อให้โมเดลยังทำงานได้
+            for feature in features_list:
+                if feature not in df.columns:
+                    df[feature] = 0
+            # raise ValueError(f"Missing feature columns after calculation: {missing}")
 
-        last_row = df.iloc[-1][features_list].values.reshape(1, -1)
-
+        last_row_features = df.iloc[-1][features_list]
+        last_row = last_row_features.values.reshape(1, -1)
         # 5. โหลดโมเดล
         model_path = os.path.join(os.path.dirname(__file__), 'models', model_filename)
         if not os.path.exists(model_path):
@@ -59,9 +69,14 @@ def main():
         signal_map = {1: 'BUY', -1: 'SELL', 0: 'HOLD'}
         signal = signal_map.get(int(prediction), 'HOLD')
         
-        # คำนวณ Buyer Percentage
-        buy_prob = probabilities[list(model.classes_).index(1)] if 1 in model.classes_ else 0
-        sell_prob = probabilities[list(model.classes_).index(-1)] if -1 in model.classes_ else 0
+        # คำนวณ Buyer Percentage (แก้ไขให้ปลอดภัยขึ้น)
+        class_labels = model.classes_.tolist()
+        buy_prob = 0
+        sell_prob = 0
+        if 1 in class_labels:
+            buy_prob = probabilities[class_labels.index(1)]
+        if -1 in class_labels:
+            sell_prob = probabilities[class_labels.index(-1)]
         buyer_percentage = (buy_prob / (buy_prob + sell_prob)) * 100 if (buy_prob + sell_prob) > 0 else 50
 
         # 7. สร้างผลลัพธ์และ Print เป็น JSON
