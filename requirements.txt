@@ -1,7 +1,8 @@
 pandas
-pandas-ta
-scikit-learn
-joblib
 numpy
+scikit-learn
+tensorflow
+joblib
+pandas-ta
+twelvedata
 requests
-backtesting
