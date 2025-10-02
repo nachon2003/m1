@@ -586,15 +586,11 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     try {
-        // Check if user already exists
-        const existingUser = await db.get('SELECT * FROM users WHERE username = ?', username);
+        // (แก้ไข) ตรวจสอบว่า username หรือ email ซ้ำหรือไม่
+        const existingUser = await db.get('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
         if (existingUser) {
-            return res.status(409).json({ message: 'Username already taken.' });
-        }
-        // (ใหม่) ตรวจสอบว่าอีเมลซ้ำหรือไม่
-        const existingEmail = await db.get('SELECT * FROM users WHERE email = ?', email);
-        if (existingEmail) {
-            return res.status(409).json({ message: 'Email already in use.' });
+            const message = existingUser.username === username ? 'Username already taken.' : 'Email already in use.';
+            return res.status(409).json({ message });
         }
 
         // Hash the password
@@ -686,7 +682,11 @@ app.post('/api/auth/forgot-password', async (req, res, next) => {
             const resetToken = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
 
             // ส่งอีเมลพร้อมลิงก์สำหรับรีเซ็ต
-            await sendPasswordResetEmail({ recipientEmail: user.email, resetToken });
+            // (แก้ไข) ส่ง resetToken ไปด้วย
+            await sendPasswordResetEmail({ 
+                recipientEmail: user.email, 
+                resetToken: resetToken 
+            });
         }
 
         res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });

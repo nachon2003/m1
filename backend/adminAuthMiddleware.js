@@ -1,31 +1,35 @@
+// backend/adminAuthMiddleware.js
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = process.env;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const adminAuthenticateToken = (req, res, next) => {
+const adminAuthenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token == null) {
-        return res.status(401).json({ message: 'Unauthorized: No token provided.' });
+        return res.status(401).json({ message: 'Authentication token required.' });
     }
 
-    jwt.verify(token, JWT_SECRET, async (err, user) => {
-        if (err) {
-            return res.status(403).json({ message: 'Forbidden: Invalid or expired token.' });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const db = req.app.get('db');
+        
+        // ดึงข้อมูลผู้ใช้จาก DB เพื่อตรวจสอบว่าเป็นแอดมินจริงหรือไม่
+        const user = await db.get('SELECT id, username, is_admin FROM users WHERE id = ?', decoded.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
 
-        const db = req.app.get('db');
-        try {
-            const dbUser = await db.get('SELECT id, username, is_admin FROM users WHERE id = ?', user.id);
-            if (!dbUser || dbUser.is_admin !== 1) {
-                return res.status(403).json({ message: 'Forbidden: Admin access required.' });
-            }
-            req.user = dbUser; // Attach admin user info to request
-            next();
-        } catch (dbError) {
-            next(dbError);
+        if (!user.is_admin) {
+            return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
         }
-    });
+
+        req.user = user; // เก็บข้อมูลผู้ใช้ (ที่เป็นแอดมิน) ไว้ใน request
+        next();
+    } catch (err) {
+        return res.status(403).json({ message: 'Invalid or expired token.' });
+    }
 };
 
 module.exports = { adminAuthenticateToken };

@@ -28,7 +28,12 @@ const createTransporter = async () => {
         // ถ้าไม่มีการตั้งค่า Gmail ให้ใช้ Ethereal สำหรับทดสอบ
         console.log('⚠️ Gmail credentials not found in .env, falling back to Ethereal for testing.');
         let testAccount = await nodemailer.createTestAccount();
-        console.log('📧 Ethereal test account created. Preview emails at:', nodemailer.getTestMessageUrl(null));
+        // (แก้ไข) สร้าง URL สำหรับดูอีเมลทดสอบล่วงหน้า
+        // การส่งค่า null เข้าไปใน getTestMessageUrl จะทำให้ได้ URL ของ inbox โดยตรง
+        // ซึ่งมีประโยชน์เมื่อเรายังไม่มี message info
+        const previewUrl = nodemailer.getTestMessageUrl(false);
+        console.log('📧 Ethereal test account created. User: %s, Pass: %s', testAccount.user, testAccount.pass);
+        console.log('📬 Preview emails for this session at: %s', previewUrl);
         return nodemailer.createTransport({
             host: 'smtp.ethereal.email', port: 587, secure: false,
             auth: { user: testAccount.user, pass: testAccount.pass },
@@ -64,7 +69,10 @@ const sendNewTicketEmailToAdmins = async ({ ticketId, subject, user, db }) => {
 
         let info = await transporter.sendMail(mailOptions);
         console.log('Admin notification email sent: %s', info.messageId);
-        if (process.env.NODE_ENV !== 'production') {
+        // (แก้ไข) ตรวจสอบว่า transporter เป็นของ Ethereal หรือไม่ ก่อนจะแสดง Preview URL
+        // เพื่อป้องกันการแสดง URL ที่ไม่ถูกต้องเมื่อใช้ Gmail
+        const isEthereal = info.response.includes('Ethereal');
+        if (isEthereal) {
             console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
         }
     } catch (error) {
@@ -93,7 +101,8 @@ const sendReplyNotificationEmail = async ({ recipientEmail, ticketId, replierNam
 
         let info = await transporter.sendMail(mailOptions);
         console.log('User reply notification email sent: %s', info.messageId);
-        if (process.env.NODE_ENV !== 'production') {
+        const isEthereal = info.response.includes('Ethereal');
+        if (isEthereal) {
             console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
         }
     } catch (error) {
@@ -127,6 +136,11 @@ const sendPasswordResetEmail = async ({ recipientEmail, resetToken }) => {
 
         let info = await transporter.sendMail(mailOptions);
         console.log('Password reset email sent: %s', info.messageId);
+        // (เพิ่ม) แสดง Preview URL สำหรับ Ethereal
+        const isEthereal = info.response.includes('Ethereal');
+        if (isEthereal) {
+            console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        }
     } catch (error) {
         console.error('Error sending password reset email:', error);
     }

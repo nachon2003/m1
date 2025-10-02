@@ -12,10 +12,9 @@ const {
 // (แก้ไข) ทำให้การกำหนด Python path ฉลาดขึ้นและป้องกันข้อผิดพลาด
 // - ถ้าอยู่ใน Production (เช่น Render) ให้ใช้ 'python3' เสมอ
 // - ถ้าอยู่ใน Development ให้ใช้ค่าจาก .env หรือ default เป็น 'python3'
-const PYTHON_EXECUTABLE =
-  process.env.NODE_ENV === "production"
-    ? "python3"
-    : process.env.PYTHON_EXECUTABLE || "python3";
+const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || 
+  (process.env.NODE_ENV === "production" ? "python3" : "python");
+
 
 const getDecimalPlaces = (symbol) => {
     const normalized = symbol.toUpperCase();
@@ -203,6 +202,11 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             aiSignalData.confidence = result.confidence || 'N/A';
             console.log(`Python ${modelType.toUpperCase()} Model Output:`, result);
  
+            // (แก้ไข) อัปเดต buyer_percentage จากผลลัพธ์ของ Python
+            if (result.buyer_percentage !== undefined) {
+                aiSignalData.buyer_percentage = result.buyer_percentage;
+            }
+
         } catch (aiError) {
             // (ปรับปรุง) จัดการกับ Error ที่เกิดจากการหาไฟล์โมเดลไม่เจอ
             if (aiError.message.includes('Model file not found')) {
@@ -214,6 +218,27 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             aiSignalData.signal = 'HOLD'; // ถ้า Python error ให้เป็น HOLD
         }
  
+        // --- (ย้ายมาไว้ตรงนี้) คำนวณ Trend และ Volume/Volatility หลังจากจัดการทุกอย่างเสร็จสิ้น ---
+        // เพื่อให้แน่ใจว่าค่านี้จะถูกคำนวณและส่งกลับไปเสมอ
+        const sma20 = SMA.calculate({ period: 20, values: closes });
+        if (sma20.length > 0) {
+            const lastSma = sma20[sma20.length - 1];
+            if (currentClose > lastSma) {
+                aiSignalData.trend = 'Uptrend';
+            } else if (currentClose < lastSma) {
+                aiSignalData.trend = 'Downtrend';
+            } else {
+                aiSignalData.trend = 'Sideways';
+            }
+        }
+
+        // (แก้ไข) เปลี่ยนมาใช้ Volatility (ATR) เป็นตัวแทนของ Volume/Market Strength
+        const atrInput = { high: highs, low: lows, close: closes, period: 14 };
+        const atrResult = ATR.calculate(atrInput);
+        const lastAtr = atrResult.length > 0 ? atrResult[atrResult.length - 1] : 0;
+        // สมมติฐาน: แปลง ATR เป็น % ของราคาปัจจุบัน (อาจต้องปรับปรุง)
+        aiSignalData.volatility = ((lastAtr / currentClose) * 100).toFixed(2) + '%';
+
         // --- (ปรับปรุงครั้งใหญ่) เปลี่ยนมาใช้การคำนวณแนวรับ-แนวต้านแบบไดนามิก ---
         // (แก้ไข) ปรับ lookback period เป็น 24 แท่งตามที่ต้องการ
         const { supports, resistances } = findDynamicLevels(ohlcData, 24);
@@ -262,38 +287,6 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
                 aiSignalData.stopLossPrice = currentClose + (slPipsFallback * pipValue);
                 aiSignalData.takeProfitPrice = currentClose - (tpPipsFallback * pipValue);
             }
-        }
- 
-        // --- (ย้ายมาไว้ตรงนี้) คำนวณ Trend และ Volume หลังจากจัดการทุกอย่างเสร็จสิ้น ---
-        // เพื่อให้แน่ใจว่าค่านี้จะถูกคำนวณและส่งกลับไปเสมอ
-        const sma20 = SMA.calculate({ period: 20, values: closes });
-        if (sma20.length > 0) {
-            const lastSma = sma20[sma20.length - 1];
-            if (currentClose > lastSma) {
-                aiSignalData.trend = 'Uptrend';
-            } else if (currentClose < lastSma) {
-                aiSignalData.trend = 'Downtrend';
-            } else {
-                aiSignalData.trend = 'Sideways';
-            }
-        }
-
-        // (แก้ไข) เปลี่ยนมาใช้ Volatility (ATR) เป็นตัวแทนของ Volume
-        // เนื่องจากข้อมูล Volume ของ Forex ไม่มีมาตรฐาน
-        try {
-            const atrInput = { high: highs, low: lows, close: closes, period: 14 };
-            const atrResult = require('technicalindicators').ATR.calculate(atrInput);
-            if (atrResult.length > 20) {
-                const lastAtr = atrResult[atrResult.length - 1];
-                const avgAtr = SMA.calculate({ period: 20, values: atrResult }).pop();
-                if (lastAtr > avgAtr * 1.2) {
-                    aiSignalData.volatility = 'High'; // (แก้ไข) เปลี่ยนชื่อเป็น volatility
-                } else {
-                    aiSignalData.volatility = 'Normal'; // (แก้ไข) เปลี่ยนชื่อเป็น volatility
-                }
-            }
-        } catch (e) {
-            // ไม่ต้องทำอะไรถ้าคำนวณไม่ได้
         }
 
         // (แก้ไข) บันทึก Signal ที่ไม่ใช่ HOLD ลงในฐานข้อมูลตามโครงสร้างใหม่
