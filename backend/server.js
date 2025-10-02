@@ -116,12 +116,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 // (ย้ายมาจากด้านบนเพื่อความเป็นระเบียบ)
 const aiRoutes = require('./aiRoutes');
 app.use('/api/ai', aiRoutes);
+// (แก้ไข) ย้าย adminRoutes ขึ้นมาไว้ก่อน supportRoutes เพื่อแก้ปัญหา Route Overlapping
+const adminRoutes = require('./adminRoutes');
+app.use('/api/admin', adminRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Technical Analysis
 const technicalRoutes = require('./technicalRoutes');
 app.use('/api/technical', technicalRoutes);
-// (ใหม่) ลงทะเบียน Route สำหรับ Training Pipeline
-const trainingRoutes = require('./trainingRoutes');
-app.use('/api/training', trainingRoutes);
 // (ใหม่) ลงทะเบียน Route สำหรับ Support System
 const supportRoutes = require('./supportRoutes');
 app.use('/api/support', supportRoutes);
@@ -855,10 +855,6 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-// =======================================================================
-// (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
-const adminRoutes = require('./adminRoutes');
-app.use('/api/admin', adminRoutes);
 
 // This middleware catches all errors passed via next(error).
 // It MUST be the last `app.use()` call before `app.listen()`.
