@@ -149,7 +149,7 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
         // (แก้ไข) เรียกใช้ getOhlcData และส่ง timeframe ไปด้วย
         const ohlcData = await getOhlcData(normalizedSymbol, timeframe);
  
-        if (!ohlcData || ohlcData.length === 0) {
+        if (!ohlcData || !Array.isArray(ohlcData) || ohlcData.length === 0) {
             throw new Error(`Could not get sufficient OHLC data for ${normalizedSymbol} (${timeframe}).`);
         }
  

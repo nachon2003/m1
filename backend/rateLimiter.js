@@ -6,21 +6,22 @@ let lastApiCallTimestamp = 0;
 let apiCallQueue = Promise.resolve();
 
 const twelveDataRateLimiter = (source = 'Unknown') => {
-    const now = Date.now();
-    const timeSinceLastCall = now - lastApiCallTimestamp;
-    const waitTime = timeSinceLastCall < TWELVEDATA_RATE_LIMIT_MS
-        ? TWELVEDATA_RATE_LIMIT_MS - timeSinceLastCall
-        : 0;
-
-    if (waitTime > 0) {
-        console.warn(`[Rate Limit] Centralized limiter activated by "${source}". Waiting for ${waitTime}ms.`);
-    }
-
-    const waitPromise = new Promise(resolve => setTimeout(resolve, waitTime));
-
-    // เพิ่ม Promise ใหม่เข้าไปในคิว และอัปเดตคิวให้เป็น Promise ล่าสุด
-    apiCallQueue = apiCallQueue.then(() => waitPromise).then(() => {
-        lastApiCallTimestamp = Date.now(); // อัปเดต timestamp หลังจากรอ
+    // (แก้ไข) ปรับปรุง Logic ทั้งหมดเพื่อป้องกัน Race Condition
+    // โดยการคำนวณและจองเวลาที่จะเรียก API ครั้งถัดไปไว้ใน Promise chain
+    apiCallQueue = apiCallQueue.then(() => {
+        const now = Date.now();
+        const timeSinceLastCall = now - lastApiCallTimestamp;
+        const waitTime = timeSinceLastCall < TWELVEDATA_RATE_LIMIT_MS
+            ? TWELVEDATA_RATE_LIMIT_MS - timeSinceLastCall
+            : 0;
+        
+        if (waitTime > 0) {
+            console.warn(`[Rate Limit] Centralized limiter activated by "${source}". Waiting for ${waitTime}ms.`);
+        }
+        
+        // (สำคัญ) อัปเดต timestamp ของการเรียกครั้งถัดไปทันที
+        lastApiCallTimestamp = now + waitTime;
+        return new Promise(resolve => setTimeout(resolve, waitTime));
     });
 
     return apiCallQueue;

@@ -112,9 +112,16 @@ const getOhlcData = async (symbol, timeframe = '4h') => {
             throw new Error("Twelve Data OHLC daily API error or invalid response format.");
         }
     } catch (error) {
+        // (แก้ไข) ปรับปรุงการจัดการ Error ให้ดีขึ้น
         const errorMessage = error.response ? JSON.stringify(error.response.data) : error.message;
         console.error(`Error fetching OHLC data from Twelve Data for ${normalizedSymbol}:`, errorMessage);
-        throw new Error(`Failed to fetch OHLC data from provider for ${normalizedSymbol}.`);
+        
+        // --- (ใหม่) เพิ่ม Fallback Mechanism ---
+        // ถ้าดึงข้อมูลจาก API ไม่สำเร็จ ให้ลองใช้ข้อมูล Mock แทน
+        console.warn(`[FALLBACK] API fetch failed for ${normalizedSymbol}. Attempting to use mock data.`);
+        const mockData = mockOhlcData[normalizedSymbol];
+        if (mockData) return mockData;
+        throw new Error(`Failed to fetch OHLC data for ${normalizedSymbol} and no mock data available.`);
     }
 };
 
