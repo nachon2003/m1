@@ -219,20 +219,6 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             aiSignalData.signal = 'HOLD'; // ถ้า Python error ให้เป็น HOLD
         }
  
-        // --- (ย้ายมาไว้ตรงนี้) คำนวณ Trend และ Volume/Volatility หลังจากจัดการทุกอย่างเสร็จสิ้น ---
-        // เพื่อให้แน่ใจว่าค่านี้จะถูกคำนวณและส่งกลับไปเสมอ
-        const sma20 = SMA.calculate({ period: 20, values: closes });
-        if (sma20.length > 0) {
-            const lastSma = sma20[sma20.length - 1];
-            if (currentClose > lastSma) {
-                aiSignalData.trend = 'Uptrend';
-            } else if (currentClose < lastSma) {
-                aiSignalData.trend = 'Downtrend';
-            } else {
-                aiSignalData.trend = 'Sideways';
-            }
-        }
-
         // (แก้ไข) เปลี่ยนมาใช้ Volatility (ATR) เป็นตัวแทนของ Volume/Market Strength
         const atrInput = { high: highs, low: lows, close: closes, period: 14 };
         const atrResult = ATR.calculate(atrInput);
