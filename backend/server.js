@@ -859,7 +859,6 @@ app.get('/api/news', async (req, res) => {
 // (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
 const adminRoutes = require('./adminRoutes');
 app.use('/api/admin', adminRoutes);
-app.set('wss', wss); // (เพิ่ม) ทำให้ wss สามารถเข้าถึงได้จาก adminRoutes
 
 // This middleware catches all errors passed via next(error).
 // It MUST be the last `app.use()` call before `app.listen()`.
@@ -903,6 +902,10 @@ let wss;
 
 function setupWebSocketServer() {
     wss = new WebSocket.Server({ server });
+
+    // (แก้ไข) ย้ายมาไว้ตรงนี้! ตั้งค่า wss บน app object หลังจากที่ wss ถูกสร้างแล้ว
+    app.set('wss', wss);
+
 const broadcastLivePrices = async () => {
     // ถ้าไม่มี client เชื่อมต่ออยู่ ก็ไม่ต้องทำอะไร
     if (wss.clients.size === 0) {
