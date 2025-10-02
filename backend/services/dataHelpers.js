@@ -49,29 +49,31 @@ const getOhlcData = async (symbol, timeframe = '4h') => {
     // (ใหม่) ทำให้ชื่อไฟล์แคชขึ้นอยู่กับ Timeframe ด้วย
     const filePath = path.join(cacheDir, `${normalizedSymbol.replace('/', '_')}_${timeframe}.json`);
 
-    // 1. ตรวจสอบไฟล์แคชก่อน
-    try {
-        await fs.mkdir(cacheDir, { recursive: true });
-        const fileData = await fs.readFile(filePath, 'utf8');
-        console.log(`[LOCAL CACHE] Serving OHLC data for ${normalizedSymbol} (${timeframe}) from file.`);
-        // แปลงข้อมูล JSON ที่อ่านได้กลับเป็น Object ที่มี Date object ถูกต้อง
-        return JSON.parse(fileData).map(d => ({ ...d, time: new Date(d.time) }));
-    } catch (fileError) {
-        // หากไม่พบไฟล์ (ENOENT) ก็จะไปขั้นตอนต่อไปเพื่อดึงข้อมูลจาก API
-        if (fileError.code !== 'ENOENT') {
-            console.error(`Error reading local cache file for ${normalizedSymbol}:`, fileError);
-        }
-    }
+    // (แก้ไข) ปิดการใช้งาน Cache ชั่วคราวเพื่อให้ได้ข้อมูลสดใหม่เสมอ
+    // // 1. ตรวจสอบไฟล์แคชก่อน
+    // try {
+    //     await fs.mkdir(cacheDir, { recursive: true });
+    //     const fileData = await fs.readFile(filePath, 'utf8');
+    //     console.log(`[LOCAL CACHE] Serving OHLC data for ${normalizedSymbol} (${timeframe}) from file.`);
+    //     // แปลงข้อมูล JSON ที่อ่านได้กลับเป็น Object ที่มี Date object ถูกต้อง
+    //     return JSON.parse(fileData).map(d => ({ ...d, time: new Date(d.time) }));
+    // } catch (fileError) {
+    //     // หากไม่พบไฟล์ (ENOENT) ก็จะไปขั้นตอนต่อไปเพื่อดึงข้อมูลจาก API
+    //     if (fileError.code !== 'ENOENT') {
+    //         console.error(`Error reading local cache file for ${normalizedSymbol}:`, fileError);
+    //     }
+    // }
 
-    // 2. หากไม่มีไฟล์แคช ให้ตรวจสอบแคชในหน่วยความจำ (In-memory cache)
-    const cacheKey = `${normalizedSymbol}_${timeframe}`;
-    const cachedData = ohlcCache.get(cacheKey);
-    if (cachedData) {
-        console.log(`Serving Forex OHLC data for ${normalizedSymbol} (${timeframe}) from in-memory cache.`);
-        return cachedData;
-    }
+    // // 2. หากไม่มีไฟล์แคช ให้ตรวจสอบแคชในหน่วยความจำ (In-memory cache)
+    // const cacheKey = `${normalizedSymbol}_${timeframe}`;
+    // const cachedData = ohlcCache.get(cacheKey);
+    // if (cachedData) {
+    //     console.log(`Serving Forex OHLC data for ${normalizedSymbol} (${timeframe}) from in-memory cache.`);
+    //     return cachedData;
+    // }
 
     // 3. หากไม่มีแคชใดๆ เลย ให้ดึงข้อมูลจาก API
+    const cacheKey = `${normalizedSymbol}_${timeframe}`; // ยังคงใช้ cacheKey สำหรับ in-memory cache
     try {
         const apiTimeframe = mapTimeframeToApi(timeframe); // แปลง Timeframe ก่อนใช้งาน
         await twelveDataRateLimiter(`getOhlcData for ${normalizedSymbol} (${timeframe})`);
@@ -92,15 +94,16 @@ const getOhlcData = async (symbol, timeframe = '4h') => {
             })).reverse();
             console.log(`Successfully fetched ${ohlcData.length} OHLC data points for ${timeframe} from Twelve Data.`);
             
-            // 4. บันทึกข้อมูลลงไฟล์แคชเพื่อใช้ในอนาคต
-            try {
-                await fs.writeFile(filePath, JSON.stringify(ohlcData, null, 2));
-                console.log(`[LOCAL CACHE] Saved OHLC data for ${normalizedSymbol} to file.`);
-            } catch (writeError) {
-                console.error(`Error writing to local cache file for ${normalizedSymbol}:`, writeError);
-            }
+            // (แก้ไข) ปิดการใช้งาน Cache ชั่วคราว
+            // // 4. บันทึกข้อมูลลงไฟล์แคชเพื่อใช้ในอนาคต
+            // try {
+            //     await fs.writeFile(filePath, JSON.stringify(ohlcData, null, 2));
+            //     console.log(`[LOCAL CACHE] Saved OHLC data for ${normalizedSymbol} to file.`);
+            // } catch (writeError) {
+            //     console.error(`Error writing to local cache file for ${normalizedSymbol}:`, writeError);
+            // }
 
-            // บันทึกลงแคชในหน่วยความจำสำหรับ session ปัจจุบัน
+            // บันทึกลงแคชในหน่วยความจำสำหรับ session ปัจจุบัน (ยังคงเปิดไว้เพื่อประสิทธิภาพเล็กน้อย)
             ohlcCache.set(cacheKey, ohlcData);
             return ohlcData;
         } else if (tdResponse.data && tdResponse.data.code && tdResponse.data.message) {
