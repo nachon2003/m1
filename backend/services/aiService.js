@@ -129,7 +129,7 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
  
     // --- (ปรับปรุง) สร้างโครงสร้างข้อมูลผลลัพธ์เริ่มต้น ---
     let aiSignalData = {
-        symbol: normalizedSymbol,
+        symbol: normalizedSymbol, // (แก้ไข) ลบการประกาศซ้ำซ้อนออก
         signal: 'HOLD',
         entryZoneStart: null,
         entryZoneEnd: null,
@@ -237,7 +237,8 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
         const atrResult = ATR.calculate(atrInput);
         const lastAtr = atrResult.length > 0 ? atrResult[atrResult.length - 1] : 0;
         // สมมติฐาน: แปลง ATR เป็น % ของราคาปัจจุบัน (อาจต้องปรับปรุง)
-        aiSignalData.volatility = ((lastAtr / currentClose) * 100).toFixed(2) + '%';
+        // (แก้ไข) เปลี่ยนชื่อ property จาก volatility เป็น volume เพื่อให้ตรงกับ Frontend
+        aiSignalData.volume = ((lastAtr / currentClose) * 100).toFixed(2) + '%';
 
         // --- (ปรับปรุงครั้งใหญ่) เปลี่ยนมาใช้การคำนวณแนวรับ-แนวต้านแบบไดนามิก ---
         // (แก้ไข) ปรับ lookback period เป็น 24 แท่งตามที่ต้องการ
