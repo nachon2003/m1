@@ -29,63 +29,36 @@ const getDecimalPlaces = (symbol) => {
  * @param {number} lookback - จำนวนแท่งเทียนที่จะมองย้อนกลับไป
  * @returns {{supports: number[], resistances: number[]}}
  */ 
-const findDynamicLevels = (ohlcData, lookback = 100) => {
-    // (ปรับปรุง) กรองข้อมูล Outliers ออกก่อนเพื่อความแม่นยำ
-    const filteredData = ohlcData.length > 20 ? (() => {
-        const closes = ohlcData.map(d => d.close);
-        const mean = closes.reduce((a, b) => a + b, 0) / closes.length;
-        const stdDev = Math.sqrt(closes.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / closes.length);
-        // กรองข้อมูลที่อยู่ห่างจากค่าเฉลี่ยเกิน 3-5 เท่าของ Standard Deviation ออกไป
-        return ohlcData.filter(d => 
-            Math.abs(d.high - mean) < 4 * stdDev &&
-            Math.abs(d.low - mean) < 4 * stdDev
-        );
-    })() : ohlcData;
-
-    const supports = [];
-    const resistances = [];
-    const highs = filteredData.map(d => d.high); // ใช้ข้อมูลที่กรองแล้ว
-    const lows = filteredData.map(d => d.low);   // ใช้ข้อมูลที่กรองแล้ว
-    const currentPrice = filteredData[filteredData.length - 1].close;
-
-    // Fractal ต้องการข้อมูล 5 แท่ง (2 แท่งซ้าย, แท่งกลาง, 2 แท่งขวา)
-    // เราจะเริ่มตรวจสอบจากแท่งที่ 3 จากท้ายสุด (index: length - 3)
-    const startIndex = highs.length - 3;
-    const endIndex = Math.max(2, highs.length - lookback);
-
-    for (let i = startIndex; i >= endIndex; i--) {
-        // ตรวจหา Fractal Up (แนวต้าน)
-        const isUpFractal = highs[i] > highs[i - 1] && highs[i] > highs[i - 2] &&
-                              highs[i] > highs[i + 1] && highs[i] > highs[i + 2];
-        if (isUpFractal && highs[i] > currentPrice) { // ต้องอยู่สูงกว่าราคาปัจจุบัน
-            resistances.push(highs[i]);
-        }
-
-        // ตรวจหา Fractal Down (แนวรับ)
-        const isDownFractal = lows[i] < lows[i - 1] && lows[i] < lows[i - 2] &&
-                                lows[i] < lows[i + 1] && lows[i] < lows[i + 2];
-        if (isDownFractal && lows[i] < currentPrice) { // ต้องอยู่ต่ำกว่าราคาปัจจุบัน
-            supports.push(lows[i]);
-        }
+const findDynamicLevels = (ohlcData, lookback = 24) => {
+    // --- (ยกเครื่องใหม่ทั้งหมด) ---
+    // เปลี่ยนมาใช้ Logic ที่เรียบง่ายและอิงกับราคาปัจจุบันโดยตรง
+    // เพื่อแก้ปัญหาแนวรับ-แนวต้านที่มั่วและอยู่ไกลเกินไป
+    
+    if (!ohlcData || ohlcData.length < lookback) {
+        return { supports: [], resistances: [] };
     }
 
-    // --- (ใหม่) เพิ่มแผนสำรอง ในกรณีที่หา Fractal ไม่เจอ ---
-    // ถ้ายังหาแนวต้านไม่เจอ (เช่น ในสภาวะ Uptrend แรงๆ) ให้ใช้ Highest High ในช่วง lookback
-    if (resistances.length === 0 && filteredData.length >= lookback) {
-        const recentHighs = filteredData.slice(-lookback).map(d => d.high);
-        resistances.push(Math.max(...recentHighs));
-    }
+    // 1. ดึงข้อมูลราคาล่าสุดตามจำนวน lookback ที่กำหนด
+    const recentData = ohlcData.slice(-lookback);
+    const currentPrice = recentData[recentData.length - 1].close;
 
-    // ถ้ายังหาแนวรับไม่เจอ ให้ใช้ Lowest Low ในช่วง lookback
-    if (supports.length === 0 && filteredData.length >= lookback) {
-        const recentLows = filteredData.slice(-lookback).map(d => d.low);
-        supports.push(Math.min(...recentLows));
-    }
+    // 2. หาแนวต้าน: คือ "ราคาสูงสุด (High) ที่ใกล้กับราคาปัจจุบันที่สุด"
+    //    โดยหาจากแท่งเทียนทั้งหมดในช่วง lookback ที่มีราคาสูงสุดสูงกว่าราคาปัจจุบัน
+    const potentialResistances = recentData
+        .filter(d => d.high > currentPrice)
+        .map(d => d.high);
+    
+    // 3. หาแนวรับ: คือ "ราคาต่ำสุด (Low) ที่ใกล้กับราคาปัจจุบันที่สุด"
+    //    โดยหาจากแท่งเทียนทั้งหมดในช่วง lookback ที่มีราคาต่ำสุดต่ำกว่าราคาปัจจุบัน
+    const potentialSupports = recentData
+        .filter(d => d.low < currentPrice)
+        .map(d => d.low);
 
     return {
-        // คืนค่าที่ไม่ซ้ำกันและเรียงลำดับแล้ว
-        supports: [...new Set(supports)].sort((a, b) => b - a), // เรียงจากมากไปน้อย (หาตัวที่ใกล้ที่สุด)
-        resistances: [...new Set(resistances)].sort((a, b) => a - b), // เรียงจากน้อยไปมาก (หาตัวที่ใกล้ที่สุด)
+        // ถ้าหาแนวต้านไม่เจอ ให้ใช้ราคาสูงสุดของช่วงนั้นแทน (แผนสำรอง)
+        resistances: potentialResistances.length > 0 ? [Math.min(...potentialResistances)] : [Math.max(...recentData.map(d => d.high))],
+        // ถ้าหาแนวรับไม่เจอ ให้ใช้ราคาต่ำสุดของช่วงนั้นแทน (แผนสำรอง)
+        supports: potentialSupports.length > 0 ? [Math.max(...potentialSupports)] : [Math.min(...recentData.map(d => d.low))]
     };
 };
 
