@@ -73,21 +73,22 @@ const newsCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 120 }); // 5 minu
 
 // --- (แก้ไข) ตั้งค่า CORS ให้ปลอดภัยสำหรับ Production ---
 // (แก้ไข) อ่าน URL ที่อนุญาตจาก Environment Variable เพื่อความยืดหยุ่น
-// ตัวอย่างค่าใน .env: ALLOWED_ORIGINS=http://localhost:3000,https://your-frontend-app.onrender.com
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+// บน Render.com ให้ไปที่หน้า Environment แล้วตั้งค่าตัวแปรชื่อ FRONTEND_URL
+// ให้มีค่าเป็น URL ของเว็บ Frontend ของคุณ เช่น https://your-frontend-app.onrender.com
+const allowedOrigins = [
+    process.env.FRONTEND_URL, // URL หลักจาก .env
+    'http://localhost:3000',  // สำหรับ Development
+    'http://localhost:3001'   // สำหรับ Development
+].filter(Boolean); // กรองค่าที่เป็น null หรือ undefined ออก
+
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // (แก้ไข) เพิ่มความยืดหยุ่นสำหรับ Render.com และ localhost
-    // อนุญาตถ้า origin มาจาก onrender.com, localhost, อยู่ใน list ที่กำหนด, หรือไม่มี origin (เช่น Postman)
-    const isAllowed =
-      allowedOrigins.length === 0 ||
-      allowedOrigins.includes(origin) ||
-      !origin ||
-      (origin && origin.endsWith('.onrender.com')) ||
-      (origin && origin.startsWith('http://localhost:'));
-
+    // อนุญาตถ้า origin อยู่ใน list ที่กำหนด หรือไม่มี origin (เช่น Postman, mobile apps)
+    // การเช็ค !origin เป็นสิ่งสำคัญสำหรับ server-to-server requests หรือเครื่องมือทดสอบ
+    const isAllowed = !origin || allowedOrigins.includes(origin);
+    
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -858,6 +859,7 @@ app.get('/api/news', async (req, res) => {
 // (ย้ายมา) ลงทะเบียน Route สำหรับ Admin Dashboard
 const adminRoutes = require('./adminRoutes');
 app.use('/api/admin', adminRoutes);
+app.set('wss', wss); // (เพิ่ม) ทำให้ wss สามารถเข้าถึงได้จาก adminRoutes
 
 // This middleware catches all errors passed via next(error).
 // It MUST be the last `app.use()` call before `app.listen()`.
