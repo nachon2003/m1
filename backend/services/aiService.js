@@ -161,10 +161,9 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
         const decimalPlaces = getDecimalPlaces(normalizedSymbol);
  
         // --- (ปรับปรุง) ย้ายการคำนวณทั้งหมดไปให้ Python จัดการ ---
-        try {
-            if (closes.length < python_sequence_length) {
-                throw new Error(`Not enough historical data (${closes.length} bars) for Python AI (needs ${python_sequence_length}).`);
-            }
+        // (แก้ไข) ตรวจสอบข้อมูลก่อนเรียก Python และจัดการ Error อย่างนุ่มนวล
+        if (closes.length >= python_sequence_length) {
+            try {
  
             // (แก้ไข) ส่งข้อมูล OHLC ดิบ (รวม volume) ให้ Python จัดการคำนวณ Feature เอง
             // เพื่อให้แน่ใจว่า Feature ที่ใช้ในการทำนายจะตรงกับตอนที่เทรน
@@ -208,15 +207,20 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
                 aiSignalData.buyer_percentage = result.buyer_percentage;
             }
 
-        } catch (aiError) {
-            // (ปรับปรุง) จัดการกับ Error ที่เกิดจากการหาไฟล์โมเดลไม่เจอ
-            if (aiError.message.includes('Model file not found')) {
-                aiSignalData.reasoning = `AI model for ${timeframe} timeframe not found. Please train the model for this timeframe.`;
-            } else {
-                aiSignalData.reasoning = `AI analysis failed: ${aiError.message}. The system will default to HOLD.`;
+            } catch (aiError) {
+                // (ปรับปรุง) จัดการกับ Error ที่เกิดจากการหาไฟล์โมเดลไม่เจอ
+                if (aiError.message.includes('Model file not found')) {
+                    aiSignalData.reasoning = `AI model for ${timeframe} timeframe not found. Please train the model for this timeframe.`;
+                } else {
+                    aiSignalData.reasoning = `AI analysis failed: ${aiError.message}. The system will default to HOLD.`;
+                }
+                console.error(`[AI Prediction Failed for ${normalizedSymbol}]`, aiError.message);
+                aiSignalData.signal = 'HOLD'; // ถ้า Python error ให้เป็น HOLD
             }
-            console.error(`[AI Prediction Failed for ${normalizedSymbol}]`, aiError.message);
-            aiSignalData.signal = 'HOLD'; // ถ้า Python error ให้เป็น HOLD
+        } else {
+            // (ใหม่) ถ้าข้อมูลไม่พอสำหรับ AI ให้ตั้งค่าเริ่มต้นและ log ไว้
+            aiSignalData.reasoning = `Not enough historical data (${closes.length} bars) for AI analysis (needs ${python_sequence_length}). Defaulting to HOLD.`;
+            console.warn(`[AI SKIPPED for ${normalizedSymbol}] ${aiSignalData.reasoning}`);
         }
  
         // (แก้ไข) เปลี่ยนมาใช้ Volatility (ATR) เป็นตัวแทนของ Volume/Market Strength
