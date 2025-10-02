@@ -30,22 +30,22 @@ const getDecimalPlaces = (symbol) => {
  * @returns {{supports: number[], resistances: number[]}}
  */ 
 const findDynamicLevels = (ohlcData, lookback = 100) => {
-    // (ใหม่) กรองข้อมูล Outliers ออกก่อน
-    // คำนวณค่าเฉลี่ยและ Standard Deviation ของราคาปิด
-    const closes = ohlcData.map(d => d.close);
-    const mean = closes.reduce((a, b) => a + b, 0) / closes.length;
-    const stdDev = Math.sqrt(closes.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / closes.length);
-
-    // กรองข้อมูลที่อยู่ห่างจากค่าเฉลี่ยเกิน 5 เท่าของ Standard Deviation ออกไป
-    const filteredData = ohlcData.filter(d => 
-        Math.abs(d.high - mean) < 5 * stdDev &&
-        Math.abs(d.low - mean) < 5 * stdDev
-    );
+    // (ปรับปรุง) กรองข้อมูล Outliers ออกก่อนเพื่อความแม่นยำ
+    const filteredData = ohlcData.length > 20 ? (() => {
+        const closes = ohlcData.map(d => d.close);
+        const mean = closes.reduce((a, b) => a + b, 0) / closes.length;
+        const stdDev = Math.sqrt(closes.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / closes.length);
+        // กรองข้อมูลที่อยู่ห่างจากค่าเฉลี่ยเกิน 3-5 เท่าของ Standard Deviation ออกไป
+        return ohlcData.filter(d => 
+            Math.abs(d.high - mean) < 4 * stdDev &&
+            Math.abs(d.low - mean) < 4 * stdDev
+        );
+    })() : ohlcData;
 
     const supports = [];
     const resistances = [];
-    const highs = filteredData.map(d => d.high);
-    const lows = filteredData.map(d => d.low);
+    const highs = filteredData.map(d => d.high); // ใช้ข้อมูลที่กรองแล้ว
+    const lows = filteredData.map(d => d.low);   // ใช้ข้อมูลที่กรองแล้ว
     const currentPrice = filteredData[filteredData.length - 1].close;
 
     // Fractal ต้องการข้อมูล 5 แท่ง (2 แท่งซ้าย, แท่งกลาง, 2 แท่งขวา)
@@ -262,13 +262,13 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
         if (aiSignalData.signal === 'BUY') {
             if (nearestSupport) { // แผน A: ใช้แนวรับ
                 aiSignalData.entryZoneStart = nearestSupport + (10 * pipValue); // เข้าใกล้แนวรับ
-                aiSignalData.entryZoneEnd = nearestSupport;
+                aiSignalData.entryZoneEnd = nearestSupport; // ราคาดีที่สุดคือที่แนวรับพอดี
                 aiSignalData.stopLossPrice = nearestSupport - (slBufferPips * pipValue);
-                // TP คำนวณจาก SL เพื่อให้ได้ R:R 1:2
+                // (ปรับปรุง) TP คำนวณจาก SL เพื่อให้ได้ R:R 1:2 ที่แม่นยำขึ้น
                 const riskDistance = aiSignalData.entryZoneStart - aiSignalData.stopLossPrice;
                 aiSignalData.takeProfitPrice = aiSignalData.entryZoneStart + (riskDistance * 2);
             } else { // แผน B (Fallback): ใช้ราคาปัจจุบัน
-                aiSignalData.entryZoneStart = currentClose;
+                aiSignalData.entryZoneStart = currentClose; // ราคาเข้าคือราคาปัจจุบัน
                 aiSignalData.entryZoneEnd = currentClose - (10 * pipValue); // โซนย่อตัวเล็กน้อย
                 aiSignalData.stopLossPrice = currentClose - (slPipsFallback * pipValue);
                 aiSignalData.takeProfitPrice = currentClose + (tpPipsFallback * pipValue);
@@ -276,13 +276,13 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
         } else if (aiSignalData.signal === 'SELL') {
             if (nearestResistance) { // แผน A: ใช้แนวต้าน
                 aiSignalData.entryZoneStart = nearestResistance - (10 * pipValue); // เข้าใกล้แนวต้าน
-                aiSignalData.entryZoneEnd = nearestResistance;
+                aiSignalData.entryZoneEnd = nearestResistance; // ราคาดีที่สุดคือที่แนวต้านพอดี
                 aiSignalData.stopLossPrice = nearestResistance + (slBufferPips * pipValue);
-                // TP คำนวณจาก SL เพื่อให้ได้ R:R 1:2
+                // (ปรับปรุง) TP คำนวณจาก SL เพื่อให้ได้ R:R 1:2 ที่แม่นยำขึ้น
                 const riskDistance = aiSignalData.stopLossPrice - aiSignalData.entryZoneStart;
                 aiSignalData.takeProfitPrice = aiSignalData.entryZoneStart - (riskDistance * 2);
             } else { // แผน B (Fallback): ใช้ราคาปัจจุบัน
-                aiSignalData.entryZoneStart = currentClose;
+                aiSignalData.entryZoneStart = currentClose; // ราคาเข้าคือราคาปัจจุบัน
                 aiSignalData.entryZoneEnd = currentClose + (10 * pipValue); // โซนดีดตัวเล็กน้อย
                 aiSignalData.stopLossPrice = currentClose + (slPipsFallback * pipValue);
                 aiSignalData.takeProfitPrice = currentClose - (tpPipsFallback * pipValue);
