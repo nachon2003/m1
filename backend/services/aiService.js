@@ -83,15 +83,15 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
     const modelFileName = `${normalizedSymbol.replace('/', '_')}_${timeframe}_random_forest.joblib`;
     const python_sequence_length = 100; // (แก้ไข) ปรับกลับมาเป็น 100 หลังจากเอา MA_200 ออก
  
-    // (แก้ไข) ปิดการใช้งาน Cache ชั่วคราวเพื่อให้ได้ข้อมูลสดใหม่เสมอ
+    // (แก้ไข) เปิดการใช้งาน Cache กลับมา
     // Check cache first, but only if not forcing a signal
-    // if (!forceSignal) {
-    //     const cachedSignal = aiSignalCache.get(cacheKey);
-    //     if (cachedSignal) {
-    //         console.log(`Serving ${modelType.toUpperCase()} AI Signal for ${normalizedSymbol} (${timeframe}) from cache.`);
-    //         return cachedSignal;
-    //     }
-    // }
+    if (!forceSignal) {
+        const cachedSignal = aiSignalCache.get(cacheKey);
+        if (cachedSignal) {
+            console.log(`Serving ${modelType.toUpperCase()} AI Signal for ${normalizedSymbol} (${timeframe}) from cache.`);
+            return cachedSignal;
+        }
+    }
  
     try {
         await fs.access(pythonScriptPath);
@@ -278,8 +278,8 @@ const generateFullAiSignal = async ({ symbol, timeframe = '4h', forceSignal = nu
             }
         }
 
-        // (แก้ไข) ปิดการใช้งาน Cache ชั่วคราว
-        // if (!forceSignal) aiSignalCache.set(cacheKey, aiSignalData);
+        // (แก้ไข) เปิดการใช้งาน Cache กลับมา
+        if (!forceSignal) aiSignalCache.set(cacheKey, aiSignalData);
         return aiSignalData;
  
     } catch (error) {
