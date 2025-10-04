@@ -910,7 +910,22 @@ initializeDatabase().then(db => {
 let wss;
 
 function setupWebSocketServer() {
-    wss = new WebSocket.Server({ server });
+    // (ปรับปรุง) เพิ่มการตรวจสอบ Origin สำหรับ WebSocket เพื่อความปลอดภัย
+    wss = new WebSocket.Server({
+        server,
+        verifyClient: (info, cb) => {
+            const origin = info.origin;
+            // ใช้ allowedOrigins ที่เราประกาศไว้ด้านบนมาตรวจสอบ
+            const isAllowed = !origin || allowedOrigins.includes(origin);
+
+            if (isAllowed) {
+                cb(true); // อนุญาตการเชื่อมต่อ
+            } else {
+                console.warn(`[WSS] Blocked connection from origin: ${origin}`);
+                cb(false, 403, 'Forbidden: Origin not allowed'); // ไม่อนุญาต
+            }
+        }
+    });
 
     // (แก้ไข) ย้ายมาไว้ตรงนี้! ตั้งค่า wss บน app object หลังจากที่ wss ถูกสร้างแล้ว
     app.set('wss', wss);
