@@ -1,12 +1,22 @@
 // server.js
 require('dotenv').config({ path: require('path').resolve(__dirname, './.env') }); // ระบุ Path ให้ชัดเจน
-// ...
+
+// (ใหม่) เพิ่ม Global Unhandled Error Catching เพื่อป้องกัน Server Crash
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  // ใน Production อาจพิจารณาการ restart process อย่างนุ่มนวล
+});
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught Exception:', error);
+  process.exit(1); // บังคับออกจาก process เพราะ state ของแอปอาจไม่เสถียรแล้ว
+});
 
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const { SMA, RSI, MACD, Stochastic } = require('technicalindicators'); // Import indicators
+const helmet = require('helmet'); // (ใหม่) Import helmet
 const bcrypt = require('bcrypt'); // ADDED
 const jwt = require('jsonwebtoken'); // ADDED
 const path = require('path'); // Import path for correct file paths
@@ -103,6 +113,9 @@ const corsOptions = {
 app.options('*', cors(corsOptions));
 
 app.use(cors(corsOptions)); // ใช้ cors middleware พร้อมกับ options ที่กำหนด
+
+// (ใหม่) ใช้ Helmet เพื่อเพิ่มความปลอดภัยให้กับ HTTP Headers
+app.use(helmet());
 
 app.use(express.json());
 
